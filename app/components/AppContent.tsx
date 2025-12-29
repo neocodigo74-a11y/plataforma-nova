@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import Descubrir from "./descubrir";
+
 import Sidebar from "./Sidebar";
 import Home from "./Home";
 import MobileHeader from "./CustomHeader";
 import CustomTabBar from "./CustomTabBar";
 import { motion, AnimatePresence } from "framer-motion";
 import DesktopHeader from "./DesktopHeader";
-import Feed from "./Feed";
+
 import BotaoFlutuante from "./BotaoFlutuante";
 import CareerDashboard from "./CareerDashboard";
 import CourseHeroIBM from "./CourseHeroIBM"; // Note: Verifique se este é o componente de Detalhes
-import HackathonListUnified from "./HackathonList";
+
 import PerfilPage from "./PerfilPage";
 import DetalheCurso from "./DetalheCurso"; // Importe o componente que criamos
 import AdvancedMicrolearning from "./Microlearning";
 import AcademicLibrary from "./AcademicLibrary";
+import AreaMembros from "./AreaMembros";
+import PwaInstallAndroid from "./pwa/PwaInstallBanner";
+import PwaInstallIOS from "./pwa/PwaInstallBannerIOS";
+
+
 
 interface Props {
   children?: ReactNode;
@@ -31,6 +36,7 @@ export default function AppContent({ children }: Props) {
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedMemberCourse, setSelectedMemberCourse] = useState<any>(null);
 
   const router = useRouter();
 
@@ -52,15 +58,19 @@ export default function AppContent({ children }: Props) {
   // 2. contentMap movido para DENTRO para ter acesso ao handleCourseSelect e selectedCourse
   const contentMap: { [key: string]: ReactNode } = {
     Home: <Home onCourseSelect={handleCourseSelect} />,
-    Community: <Feed />,
-    Aprendizados: <CareerDashboard onCourseSelect={handleCourseSelect} />,
+
+   Aprendizados: <CareerDashboard onCourseSelect={(c) => {
+    setSelectedMemberCourse(c);
+    setActiveContent("Membros");
+  }} />,
     // Usamos o componente DetalheCurso passando o curso do estado
     Detalhes: <DetalheCurso curso={selectedCourse} onBack={handleBack} />,
-    Hack: <HackathonListUnified />,
+
     Perfil: <PerfilPage />,
-    Descobrir: <Descubrir />,
+
     Artigos: <AcademicLibrary />,
-    Micro: <AdvancedMicrolearning />
+    Micro: <AdvancedMicrolearning />,
+   Membros: <AreaMembros curso={selectedMemberCourse} onBack={() => setActiveContent("Aprendizados")} />,
   };
 
   useEffect(() => {
@@ -101,6 +111,15 @@ export default function AppContent({ children }: Props) {
     setActiveContent(componentKey);
     setSidebarOpen(false);
   };
+  // 1. Crie a referência para o container de scroll
+  const scrollContainerRef = useRef<HTMLElement>(null);
+
+  // 2. Efeito para resetar o scroll ao mudar de página
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo(0, 0);
+    }
+  }, [activeContent, selectedCourse]); // Executa sempre que mudar o conteúdo ou o curso selecionado
 
   // 3. Lógica de renderização
   const conteudoPrincipal = contentMap[activeContent] || children || <Home onCourseSelect={handleCourseSelect} />;
@@ -153,7 +172,10 @@ export default function AppContent({ children }: Props) {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 overflow-y-auto pt-[38px]">
+     <main 
+        ref={scrollContainerRef} 
+        className="flex-1 overflow-y-auto pt-[3px]"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={activeContent + (selectedCourse?.id || "")}
@@ -167,11 +189,18 @@ export default function AppContent({ children }: Props) {
         </AnimatePresence>
       </main>
 
-     <CustomTabBar 
-  onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
-  onTabChange={handleTabChange} // <--- ADICIONE ESTA LINHA
-/>
+          <CustomTabBar 
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} 
+        onTabChange={handleTabChange}
+      />
+
       <BotaoFlutuante />
+
+      {/* =========================
+          PWA Install Banners
+         ========================= */}
+      <PwaInstallAndroid />
+      <PwaInstallIOS />
     </div>
   );
 }

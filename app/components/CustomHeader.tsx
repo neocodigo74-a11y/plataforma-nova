@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, UserPlus, MessageCircle, X } from "lucide-react";
+import { Bell, UserPlus, MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 
@@ -14,15 +14,22 @@ interface Props {
 // Tipagem para as informações do usuário
 type UserInfo = { nome?: string; foto_perfil?: string };
 
+// Tipagem do usuário autenticado do Supabase
+type AuthUser = { id: string; email?: string };
+
+// Tipagem do payload Realtime
+type MensagemPrivada = { destinatario_id: string };
+type Notificacao = { recebido_por: string };
+
 export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  // NOVOS ESTADOS para as contagens
+
   const [unreadNotifications, setUnreadNotifications] = useState<number>(0);
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
 
   // 🔔 Atualiza contagem de notificações
-  const updateUnreadNotifications = async (user) => {
+  const updateUnreadNotifications = async (user: AuthUser) => {
     if (!user) return;
     const { count } = await supabase
       .from("notificacoes")
@@ -33,7 +40,7 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
   };
 
   // 💬 Atualiza contagem de mensagens
-  const updateUnreadMessages = async (user) => {
+  const updateUnreadMessages = async (user: AuthUser) => {
     if (!user) return;
     const { count } = await supabase
       .from("mensagens_privadas")
@@ -43,8 +50,8 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
     setUnreadMessages(count || 0);
   };
 
-  // ⚡ Inscrição Realtime (Opcional, mas crucial para mobile)
-  const subscribeRealtime = (user) => {
+  // ⚡ Inscrição Realtime
+  const subscribeRealtime = (user: AuthUser) => {
     if (!user) return () => {};
 
     // 📩 Mensagens
@@ -55,8 +62,8 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
         { event: "*", schema: "public", table: "mensagens_privadas" },
         (payload) => {
           if (
-            payload.new?.destinatario_id === user.id ||
-            payload.old?.destinatario_id === user.id
+            (payload.new as MensagemPrivada)?.destinatario_id === user.id ||
+            (payload.old as MensagemPrivada)?.destinatario_id === user.id
           ) {
             updateUnreadMessages(user);
           }
@@ -72,8 +79,8 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
         { event: "*", schema: "public", table: "notificacoes" },
         (payload) => {
           if (
-            payload.new?.recebido_por === user.id ||
-            payload.old?.recebido_por === user.id
+            (payload.new as Notificacao)?.recebido_por === user.id ||
+            (payload.old as Notificacao)?.recebido_por === user.id
           ) {
             updateUnreadNotifications(user);
           }
@@ -81,13 +88,12 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
       )
       .subscribe();
 
-    // Cleanup — remove listeners ao desmontar
+    // Cleanup
     return () => {
       supabase.removeChannel(mensagensSub);
       supabase.removeChannel(notificacoesSub);
     };
   };
-
 
   // useEffect ATUALIZADO
   useEffect(() => {
@@ -117,8 +123,7 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
     };
 
     fetchUserData();
-  }, []); // [] garante que roda apenas na montagem
-
+  }, []);
 
   const renderUserIcon = () => {
     if (userInfo?.foto_perfil) {
@@ -147,28 +152,35 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
       );
     } else {
       return (
-        <button onClick={onToggleSidebar} className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+        <button
+          onClick={onToggleSidebar}
+          className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center"
+        >
           <UserPlus size={20} />
         </button>
       );
     }
   };
 
-  const renderBadge = (count: number, onClick: () => void, icon: ReactNode) => {
+  const renderBadge = (
+    count: number,
+    onClick: () => void,
+    icon: ReactNode
+  ) => {
     return (
-        <button 
-            onClick={onClick} 
-            className="relative cursor-pointer hover:opacity-80 transition"
-        >
-            {icon}
-            {count > 0 && (
-                <span className="absolute -top-1 -right-1.5 h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-md">
-                    {count > 9 ? '9+' : count}
-                </span>
-            )}
-        </button>
+      <button
+        onClick={onClick}
+        className="relative cursor-pointer hover:opacity-80 transition"
+      >
+        {icon}
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1.5 h-4 w-4 bg-red-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-md">
+            {count > 9 ? "9+" : count}
+          </span>
+        )}
+      </button>
     );
-  }
+  };
 
   return (
     <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white flex items-center justify-between px-4 py-2 border-b border-gray-200">
@@ -182,23 +194,23 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
 
       {/* Direita: notificações / mensagens */}
       <div className="flex items-center gap-4">
-        {/* Ícone de Adicionar Usuário (Mantido) */}
+        {/* Ícone de Adicionar Usuário */}
         <button onClick={() => router.push("/usuarios")}>
           <UserPlus size={20} className="text-gray-600" />
         </button>
-        
+
         {/* Ícone de Notificações com Badge */}
         {renderBadge(
-            unreadNotifications, 
-            () => router.push("/notificacoes"), 
-            <Bell size={20} className="text-gray-600" />
+          unreadNotifications,
+          () => router.push("/notificacoes"),
+          <Bell size={20} className="text-gray-600" />
         )}
 
         {/* Ícone de Mensagens com Badge */}
         {renderBadge(
-            unreadMessages, 
-            () => router.push("/mensagens"), 
-            <MessageCircle size={20} className="text-gray-600" />
+          unreadMessages,
+          () => router.push("/mensagens"),
+          <MessageCircle size={20} className="text-gray-600" />
         )}
       </div>
     </div>

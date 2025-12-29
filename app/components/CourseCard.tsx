@@ -2,7 +2,37 @@
 
 import { Star, ChevronRight, Bookmark } from 'lucide-react';
 
-export default function CourseCard({ course, onClick }) {
+interface Course {
+  id: number;
+  image: string;
+  title: string;
+  description: string;
+  provider: string;
+  isRecommended?: boolean;
+  rating?: string;
+  reviews?: string;
+}
+
+interface CourseCardProps {
+  course: {
+    id: number;
+    title: string;
+    description: string;
+    rating: string | number; // aceita string ou number
+    reviews: string | number; // aceita string ou number
+    image: string;
+    provider: string;
+    tags: string[];
+    isRecommended: boolean;
+    grup: string;
+    details: string;
+    recommendedText: string;
+  };
+  onClick: () => void;
+}
+
+
+export default function CourseCard({ course, onClick }: CourseCardProps) {
   return (
     <div
       onClick={onClick}
@@ -16,7 +46,6 @@ export default function CourseCard({ course, onClick }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         
-        {/* Overlay Gradiente para legibilidade do Badge */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
         {course.isRecommended && (
@@ -34,7 +63,6 @@ export default function CourseCard({ course, onClick }) {
 
       {/* Conteúdo */}
       <div className="p-5 flex flex-col flex-grow">
-        {/* Fornecedor / Provider */}
         <span className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
           {course.provider}
         </span>
@@ -47,17 +75,15 @@ export default function CourseCard({ course, onClick }) {
           {course.description}
         </p>
 
-        {/* Rating e Tags */}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center text-yellow-500">
             <Star size={14} fill="currentColor" />
             <span className="ml-1 text-sm font-bold text-gray-700">{course.rating || "4.8"}</span>
           </div>
           <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500">{course.reviews || "120 avaliações"}</span>
+          <span className="text-xs text-gray-500">{course.reviews || "12 avaliações"}</span>
         </div>
 
-        {/* Rodapé / Botão */}
         <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
           <span className="text-sm font-bold text-green-600">Gratuito</span>
           <button

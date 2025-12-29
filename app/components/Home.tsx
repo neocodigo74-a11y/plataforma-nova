@@ -1,13 +1,17 @@
-// @/app/components/Home.tsx (ou o caminho onde sua Home está)
+"use client";
 
-import AllSkillsSections from "./AllSkillsSections";
-import LearningCard from "./LearningCard";
-export default function Home({ onCourseSelect }) { // 1. Recebe o "bastão" aqui
+import AllSkillsSections, { Course } from "./AllSkillsSections";
+
+
+interface HomeProps {
+  onCourseSelect: (course: Course) => void;
+}
+
+export default function Home({ onCourseSelect }: HomeProps) {
   return (
-    <main className="min-h-screen bg-white space-y-3 pt-2">
-      {/* 2. Entrega o "bastão" para o AllSkillsSections */}
+    <main className="min-h-screen bg-white space-y-3 pt-1">
+      {/* Entrega o "bastão" para o AllSkillsSections */}
       <AllSkillsSections onCourseSelect={onCourseSelect} />
-      <LearningCard />
     </main>
   );
 }

@@ -74,3 +74,47 @@ body {
   }
 
 }
+
+/* Estilização Global da Scrollbar */
+@layer base {
+  /* Largura da barra - 5px é o equilíbrio ideal entre elegância e usabilidade */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px; 
+  }
+
+  /* Fundo da trilha (Track) - Branco quase puro ou levemente cinza */
+  ::-webkit-scrollbar-track {
+    background: #ffffff; 
+  }
+
+  /* A barra (Thumb) - Um cinza suave para não "gritar" no layout */
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db; /* Um cinza neutro (zinc-300 do tailwind) */
+    border-radius: 20px;
+    /* Adiciona uma borda invisível para dar aspecto de padding se a barra for larga */
+    border: 1px solid transparent;
+  }
+
+  /* Quando o usuário passa o mouse - Escurece um pouco */
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af; /* zinc-400 */
+  }
+
+  /* Correção para Firefox - Cores: Thumb | Track */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #ffffff;
+  }
+}
+
+/* Utilitários para esconder em locais específicos como carrosséis */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

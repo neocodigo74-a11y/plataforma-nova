@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Code, School, Trophy, Book } from "lucide-react";
+import { Code, School, Trophy, Book, icons, Home } from "lucide-react";
 
 interface CustomTabBarProps {
   onToggleSidebar: () => void;
@@ -13,24 +13,8 @@ export default function CustomTabBar({ onToggleSidebar, onTabChange }: CustomTab
   const [activeTab, setActiveTab] = useState("Home");
 
   const tabs = [
-    { 
-      name: "Home", 
-      label: "Início", 
-      // Em vez de <Image />, usamos uma div que recebe a cor do texto do pai
-      icon: (
-        <div 
-          className="w-[20px] h-[28px] bg-current" 
-          style={{
-            maskImage: "url('/logozero.svg')",
-            maskRepeat: "no-repeat",
-            maskSize: "contain",
-            WebkitMaskImage: "url('/logozero.svg')",
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskSize: "contain",
-          }}
-        />
-      ) 
-    },
+  
+    {name : "Home ", label: "Início", icon: <Home size={19} />},
     { name: "Descobrir", label: "Desafios", icon: <Trophy size={19} /> },
     { name: "Artigos", label: "Biblioteca", icon: <Book size={17} /> },
     { name: "Micro", label: "Micro", icon: <School size={19} /> },

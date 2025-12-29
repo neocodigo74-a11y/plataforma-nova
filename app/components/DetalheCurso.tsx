@@ -2,297 +2,333 @@
 
 import Image from "next/image";
 import {
-  Star,
   Layers,
   Clock,
-  Calendar,
   Check,
-  ChevronRight, // Adicionado para simular o Coursera Plus "Saiba mais"
-  Users, // Ícone mais adequado para "inscrições" em vez de Layers
+  ChevronRight,
+  X,
+  Loader2, // Ícone de carregamento
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
-/* ====================================================== */
-// NOTA: Para rodar perfeitamente, você precisará de:
-// 1. Um arquivo /public/ibm-logo.svg (ou substitua por um <img> tag e um src real do logo IBM)
-// 2. Imagens de perfil dos instrutores (substituído por placeholders coloridos)
-/* ====================================================== */
+/* =========================
+   TIPAGEM DAS PROPS
+========================= */
+interface Curso {
+  id: string | number;
+  title: string;
+  description: string;
+  rating?: number;
+  reviews?: number;
+  details?: string;
+}
 
-export default function DetalheCurso({ curso, onBack }) {
+interface DetalheCursoProps {
+  curso: Curso;
+  onBack?: () => void;
+}
+
+/* =========================
+   COMPONENTE PRINCIPAL
+========================= */
+export default function DetalheCurso({ curso, onBack }: DetalheCursoProps) {
+  const [dataAtual, setDataAtual] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [checkingEnrollment, setCheckingEnrollment] = useState(true);
+  const [objetivo, setObjetivo] = useState("Aprimoramento Profissional");
+
+  // Contador real de inscritos
+  const [totalInscritos, setTotalInscritos] = useState<number | null>(null);
+
+  useEffect(() => {
+    const data = new Date();
+    const opcoes = { day: 'numeric', month: 'short' } as const;
+    setDataAtual(data.toLocaleDateString('pt-BR', opcoes));
+
+    checkExistingEnrollment();
+    fetchTotalEnrollments(); // Busca o total ao carregar
+  }, [curso.id]);
+
+  // 🔹 BUSCA O TOTAL DE INSCRITOS NA TABELA 'inscricoes_cursos'
+  const fetchTotalEnrollments = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('inscricoes_cursos')
+        .select('*', { count: 'exact', head: true })
+        .eq('curso_id', String(curso.id));
+
+      if (error) throw error;
+      setTotalInscritos(count);
+    } catch (error) {
+      console.error("Erro ao contar inscritos:", error);
+    }
+  };
+
+  const checkExistingEnrollment = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const { data } = await supabase
+          .from('inscricoes_cursos')
+          .select('id')
+          .eq('usuario_id', session.user.id)
+          .eq('curso_id', String(curso.id))
+          .single();
+
+        if (data) setIsEnrolled(true);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar inscrição:", error);
+    } finally {
+      setCheckingEnrollment(false);
+    }
+  };
+
+  const handleEnroll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+
+    if (!user) {
+      alert("Por favor, faça login para se inscrever!");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('inscricoes_cursos')
+        .insert([
+          { 
+            usuario_id: user.id,
+            curso_id: String(curso.id), 
+            curso_titulo: curso.title,
+            objetivo: objetivo
+          }
+        ]);
+
+      if (error) {
+        if (error.code === '23505') {
+          setIsEnrolled(true);
+        } else {
+          throw error;
+        }
+      } else {
+        setIsEnrolled(true);
+        setIsModalOpen(false);
+        fetchTotalEnrollments(); // Atualiza o contador imediatamente
+        alert("Inscrição realizada com sucesso!");
+      }
+    } catch (error) {
+      console.error("Erro:", error);
+      alert("Falha na inscrição.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    // Seção principal com o fundo leve e gráfico decorativo
-    <section className="relative bg-[#f7f8fa] overflow-hidden">
-      
-      {/* GRÁFICO DECORATIVO DIREITA - Ajustado para ser fiel à imagem */}
-      {/* O gráfico é uma combinação de elementos circulares e um SVG de fundo */}
+    <section className="relative bg-[#f7f8fa] overflow-hidden min-h-screen">
+      {/* GRÁFICO DECORATIVO DIREITA */}
       <div className="hidden lg:block absolute right-[-100px] top-0 bottom-0 pointer-events-none">
-        <svg
-          viewBox="0 0 540 540"
-          width="540"
-          height="540"
-          xmlns="http://www.w3.org/2000/svg"
-          className="absolute right-0 top-1/2 transform -translate-y-1/2"
-        >
-          <path
-            d="M540 270c0 149.12-111.96 270-250 270S40 419.12 40 270 151.96 0 290 0s250 120.88 250 270z"
-            fill="#eef1f6"
-          />
-          <path
-            d="M540 270c0 149.12-111.96 270-250 270S40 419.12 40 270 151.96 0 290 0s250 120.88 250 270z"
-            fill="#eef1f6"
-            className="translate-x-[40px] translate-y-[-10px] scale-[0.85]"
-          />
-          <path
-            d="M540 270c0 149.12-111.96 270-250 270S40 419.12 40 270 151.96 0 290 0s250 120.88 250 270z"
-            fill="none"
-            stroke="#eef1f6"
-            strokeWidth="80"
-            className="translate-x-[20px] translate-y-[-10px] scale-[0.80]"
-          />
+        <svg viewBox="0 0 540 540" width="540" height="540" xmlns="http://www.w3.org/2000/svg" className="absolute right-0 top-1/2 transform -translate-y-1/2">
+          <path d="M540 270c0 149.12-111.96 270-250 270S40 419.12 40 270 151.96 0 290 0s250 120.88 250 270z" fill="#eef1f6" />
         </svg>
       </div>
 
-
       {/* CONTAINER HERO */}
       <div className="max-w-[1180px] mx-auto px-6 pt-10 pb-20 relative z-10 lg:pt-14">
-
-        {/* LOGO (Não aparece na imagem, mas um bom toque se fosse o Coursera) */}
-        {/* <Image
-          src="/ibm-logo.svg"
-          alt="IBM"
-          width={60}
-          height={24}
-          className="mb-6"
-        /> */}
-
-        {/* GRID */}
         <div className="grid lg:grid-cols-[2fr_1fr] gap-10">
-
-          {/* COLUNA PRINCIPAL - TEXTO E CTA */}
           <div>
-            {/* Título */}
             <h1 className="text-[28px] leading-tight font-bold text-[#1f1f1f] max-w-[640px] mb-2 lg:text-[36px] lg:leading-[44px]">
               {curso.title}
             </h1>
 
-            {/* Descrição */}
             <p className="mt-4 text-[15px] leading-relaxed text-[#373a3c] max-w-[620px] lg:text-[16px] lg:leading-[24px]">
-               {curso.description}{" "}
-              <strong>
-                Certified Associate in Project Management (CAPM)
-              </strong>.
+               {curso.description} <strong> Certified Associate in Project Management (CAPM)</strong>.
             </p>
 
-            {/* INSTRUTORES */}
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[14px] text-[#5b5f62]">
-              <InstructorAvatars /> {/* Componente de avatares */}
+              <InstructorAvatars />
               <span>Instrutores:</span>
-              <span className="text-[#0056d2] font-medium">
-                John Rofrano
-              </span>
+              <span className="text-[#0056d2] font-medium">John Rofrano</span>
               <span>+ Mais 6</span>
-              <span className="bg-[#eef3ff] text-[#0056d2] text-[12px] px-2 py-[2px] rounded-full"> {/* Usando rounded-full para ser mais fiel */}
-                Instrutor principal
-              </span>
+              <span className="bg-[#eef3ff] text-[#0056d2] text-[12px] px-2 py-[2px] rounded-full">Instrutor principal</span>
             </div>
 
-            {/* CTA */}
+            {/* CTA SECTION */}
             <div className="mt-6 flex flex-col gap-3">
-              {/* Botão de Inscrição */}
-              <button className="w-full sm:w-[260px] bg-[#0056d2] hover:bg-[#00419e] text-white text-[14px] font-semibold px-5 py-3 rounded-md transition duration-200"> {/* Arredondamento e transição adicionados */}
-                Inscreva-se gratuitamente
-                <span className="block text-[12px] font-normal mt-1">
-                  Inicia em 25 de dez
-                </span>
-              </button>
-
-              {/* Texto do Teste Gratuito */}
+              {checkingEnrollment ? (
+                <div className="w-[260px] h-[52px] bg-gray-200 animate-pulse rounded-md" />
+              ) : isEnrolled ? (
+                <button className="w-full sm:w-[260px] bg-green-600 hover:bg-green-700 text-white text-[14px] font-semibold px-5 py-3 rounded-md transition flex items-center justify-center gap-2">
+                  <Check className="w-4 h-4" /> Ir para o curso
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="w-full sm:w-[260px] bg-[#0056d2] hover:bg-[#00419e] text-white text-[14px] font-semibold px-5 py-4 rounded-md transition duration-200 shadow-lg shadow-blue-900/10"
+                >
+                  Inscreva-se gratuitamente
+                  <span className="block text-[12px] font-normal mt-1 opacity-90">Inicia em {dataAtual || "..."}</span>
+                </button>
+              )}
+              
               <p className="text-[14px] text-[#5b5f62] lg:text-[13px]">
-                Experimente gratuitamente: inscreva-se para iniciar seu teste gratuito de acesso total por 7 dias
+                Experimente gratuitamente: teste de acesso total por 7 dias
               </p>
             </div>
 
-            {/* CONTADOR E NOVA PLUS */}
+            {/* CONTADOR */}
             <div className="mt-4 text-[13px] text-[#5b5f62] flex flex-wrap items-center gap-2">
-              <strong className="text-[15px] text-[#1f1f1f]">45.620</strong>
-              <span className="text-[#5b5f62]">já se inscreveram</span>
-              <span className="hidden sm:inline">|</span> {/* Divisor visual */}
-              <span className="text-[#5b5f62] flex items-center gap-1">
-                Incluído com o
-                <span className="text-[#0056d2] font-semibold flex items-center gap-1">
-                  NOVA <span className="bg-[#0056d2] text-white"> Plus </span>
-                  <ChevronRight className="w-3 h-3 text-[#0056d2]" />
-                </span>
+              <strong className="text-[15px] text-[#1f1f1f]">
+                {totalInscritos !== null ? totalInscritos.toLocaleString('pt-BR') : "..."}
+              </strong>
+              <span>já se inscreveram</span>
+              <span className="hidden sm:inline">|</span>
+              <span className="flex items-center gap-1">
+                Incluído com o <span className="text-[#0056d2] font-semibold flex items-center gap-1">NOVA <span className="bg-[#0056d2] text-white px-1">Plus</span> <ChevronRight className="w-3 h-3" /></span>
               </span>
             </div>
           </div>
-          
-          {/* COLUNA LATERAL - Geralmente contém vídeo ou mais info, mas neste design é só gráfico */}
-          <div className="hidden lg:block">{/* Deixa a coluna vazia para o gráfico de fundo aparecer */}</div>
         </div>
       </div>
 
-      {/* MÉTRICAS (MUITO IMPORTANTE: Estilização do card) */}
+      {/* MODAL DE INSCRIÇÃO */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-800">Confirmar Matrícula</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEnroll} className="p-6 space-y-5">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Você selecionou:</p>
+                <p className="text-lg font-bold text-gray-900 leading-tight">{curso.title}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700">Qual seu objetivo com este curso?</label>
+                <select 
+                  value={objetivo}
+                  onChange={(e) => setObjetivo(e.target.value)}
+                  className="w-full p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                >
+                  <option>Transição de Carreira</option>
+                  <option>Aprimoramento Profissional</option>
+                  <option>Curiosidade/Pessoal</option>
+                  <option>Certificação Acadêmica</option>
+                </select>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg flex gap-3">
+                <Clock className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <p className="text-sm text-blue-800">Sua jornada começa agora. Você terá acesso total a vídeos, leituras e fóruns.</p>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#0056d2] hover:bg-[#00419e] disabled:bg-gray-400 text-white font-bold py-4 rounded-lg transition flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirmar Inscrição Gratuita"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MÉTRICAS */}
       <div className="relative z-20 -mt-10 lg:-mt-16">
         <div className="max-w-[1180px] mx-auto px-6">
-          {/* O Card das métricas - Usando o bg-white, bordas suaves e sombra correta */}
-          <div className="bg-white rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.1)] p-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            <Metric icon={<Layers className="w-6 h-6 text-[#1f1f1f]" />} title="11 séries de cursos" subtitle="Obtenha uma qualificação profissional que demonstre seus conhecimentos" />
- 
-      
-      {/* AQUI ESTÁ A MUDANÇA: */}
-      <Metric 
-        icon={null} 
-        title={`${curso.rating} ★`} 
-        subtitle={`(${curso.reviews})`} details
-      />
-            <Metric icon={null} title="Nível " subtitle={`${curso.details} `} />
-            <Metric icon={null} title="4 meses para completar" subtitle="em 10 horas por semana" />
-            <Metric icon={null} title="Cronograma flexível" subtitle="Aprenda no seu ritmo" />
+          <div className="bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
+            <Metric icon={<Layers className="w-6 h-6 text-blue-600" />} title="Especialização" subtitle="11 séries de cursos" />
+            <Metric icon={null} title={`${curso.rating} ★`} subtitle={`(${curso.reviews} avaliações)`} />
+            <Metric icon={null} title="Nível" subtitle={curso.details || ""} />
+            <Metric icon={null} title="Duração" subtitle="Aprox. 4 meses" />
+            <Metric icon={null} title="Ritmo" subtitle="Cronograma flexível" />
           </div>
         </div>
       </div>
 
-      {/* TABS (Guia de Navegação) */}
-      <div className="max-w-[1180px] mx-auto px-6 mt-10">
-        <div className="flex gap-8 border-b border-[#e9ecef] text-[15px] lg:gap-10">
+      {/* TABS & CONTEÚDO */}
+      <div className="max-w-[1180px] mx-auto px-6 mt-12 pb-20">
+        <div className="flex gap-8 border-b border-gray-200 mb-8 overflow-x-auto">
           <Tab label="Sobre" active />
-          <Tab label="Resultados" />
-          <Tab label="Cursos" />
-          <Tab label="Depoimentos" />
+          <Tab label="Conteúdo" />
+          <Tab label="Avaliações" />
         </div>
-      </div>
-
-      {/* CONTEÚDO SOBRE (Segunda Imagem) */}
-      <div className="max-w-[1180px] mx-auto px-6 mt-8 pb-24">
-
-        {/* Título: O que você vai aprender */}
-        <h2 className="text-[20px] font-semibold text-[#1f1f1f] mb-6">
-          O que você vai aprender
-        </h2>
-
-        {/* Lista de Aprendizado */}
-        <div className="grid md:grid-cols-2 gap-x-12 gap-y-4 text-[15px] text-[#373a3c] leading-relaxed">
-          <LearnItem text="Domine as habilidades e ferramentas práticas mais atualizadas que os gerentes de projetos de TI usam em suas funções diárias" />
-          <LearnItem text="Aprender os conceitos Agile de planejamento adaptativo, desenvolvimento iterativo e melhoria contínua que levam a entregas antecipadas e alto valor para o cliente" />
-          <LearnItem text="Acompanhar e gerenciar projetos, incluindo a abordagem de situações difíceis com clientes e como as atividades mudam ao longo do ciclo de vida do gerenciamento de projetos" />
-          <LearnItem text="Aplique suas novas habilidades em projetos do mundo real e laboratórios práticos" />
-        </div>
-
-        {/* Título: Habilidades que você terá */}
-        <h2 className="text-[20px] font-semibold text-[#1f1f1f] mt-12 mb-4">
-          Habilidades que você terá
-        </h2>
-
-        {/* Tags de Habilidades */}
-        <div className="flex flex-wrap gap-2.5">
-          <SkillTag label="Gestão de projetos" />
-          <SkillTag label="Engajamento das partes interessadas" />
-          <SkillTag label="Comunicação" />
-          <SkillTag label="Princípios de Kanban" />
-          <SkillTag label="Desenvolvimento ágil de software" />
-          <SkillTag label="Liderança" />
-          <SkillTag label="Gerenciamento de riscos do projeto" />
-
-          <button className="text-[13px] text-[#0056d2] font-medium hover:underline px-1 py-1">
-            Visualizar todas as habilidades
-          </button>
+        
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">O que você vai aprender</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <LearnItem text="Domine as ferramentas práticas mais atualizadas do mercado de TI." />
+          <LearnItem text="Aprenda conceitos Agile, Scrum e melhoria contínua." />
+          <LearnItem text="Gerencie projetos complexos e situações reais com clientes." />
+          <LearnItem text="Aplique habilidades em laboratórios práticos e projetos reais." />
         </div>
       </div>
     </section>
   );
 }
 
-/* ====================================================== */
-/* COMPONENTES AUXILIARES (REFATORADOS PARA FIDELIDADE) */
-/* ====================================================== */
-
-/**
- * Componente para mostrar as métricas em bloco.
- */
-function Metric({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode | null;
+/* =========================
+   COMPONENTES INTERNOS TIPADOS
+========================= */
+interface MetricProps {
+  icon?: React.ReactNode;
   title: string;
   subtitle: string;
-}) {
+}
+function Metric({ icon, title, subtitle }: MetricProps) {
   return (
-    <div className="flex flex-col items-center text-center gap-1.5 px-2">
-      {/* Se o ícone for fornecido, renderiza. Na imagem, ele só aparece no primeiro item. */}
-      {icon && <div className="text-[#1f1f1f]">{icon}</div>} 
-      <p className="text-[14px] font-semibold text-[#1f1f1f] leading-tight">{title}</p>
-      {/* Reduzindo o tamanho da fonte para a fidelidade da imagem */}
-      <p className="text-[12px] text-[#5b5f62] leading-snug">{subtitle}</p>
+    <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-1">
+      {icon && <div className="mb-2">{icon}</div>} 
+      <p className="text-[15px] font-bold text-[#1f1f1f]">{title}</p>
+      <p className="text-[12px] text-[#5b5f62] leading-tight">{subtitle}</p>
     </div>
   );
 }
 
-/**
- * Componente para as abas de navegação (Sobre, Resultados, etc.).
- */
-function Tab({
-  label,
-  active = false,
-}: {
+interface TabProps {
   label: string;
   active?: boolean;
-}) {
+}
+function Tab({ label, active = false }: TabProps) {
   return (
-    <button
-      className={`pb-3 transition duration-150 ease-in-out whitespace-nowrap 
-      ${
-        active
-          ? "border-b-2 border-[#0056d2] text-[#0056d2] font-semibold"
-          : "border-b-2 border-transparent text-[#5b5f62] hover:text-[#0056d2]"
-      }`}
-    >
+    <button className={`pb-4 text-[15px] font-medium transition-all whitespace-nowrap ${active ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500 hover:text-blue-600"}`}>
       {label}
     </button>
   );
 }
 
-/**
- * Componente para o item de lista de aprendizado.
- */
-function LearnItem({ text }: { text: string }) {
+interface LearnItemProps {
+  text: string;
+}
+function LearnItem({ text }: LearnItemProps) {
   return (
-    // Ajustado para um espaçamento mais apertado, como na imagem
-    <div className="flex gap-2.5 items-start">
-      {/* Ícone de Check Azul (ajustado para mt-[2px] para alinhamento fino) */}
-      <Check className="w-[18px] h-[18px] text-[#0056d2] mt-[2px] flex-shrink-0" />
-      <p>{text}</p>
+    <div className="flex gap-3 items-start">
+      <div className="bg-blue-100 p-1 rounded-full mt-1">
+        <Check className="w-3 h-3 text-blue-600" />
+      </div>
+      <p className="text-[15px] text-gray-700">{text}</p>
     </div>
   );
 }
 
-/**
- * Componente para a tag de habilidade.
- */
-function SkillTag({ label }: { label: string }) {
-  return (
-    // Estilização fiel: fundo azul claro/cinza, texto escuro, arredondado
-    <span className="bg-[#f3f6fb] text-[#1f1f1f] text-[13px] px-3 py-1 rounded-full whitespace-nowrap">
-      {label}
-    </span>
-  );
-}
-
-/**
- * Componente para simular os avatares dos instrutores.
- */
 function InstructorAvatars() {
-    return (
-        <div className="flex -space-x-2.5 rtl:space-x-reverse items-center">
-            {/* Avatares Placeholder - Simulação de imagem de perfil */}
-            <div className="w-7 h-7 border-2 border-white rounded-full bg-blue-500 overflow-hidden">
-                {/* <Image src="/avatar1.jpg" alt="John Rofrano" fill className="object-cover" /> */}
-            </div>
-            <div className="w-7 h-7 border-2 border-white rounded-full bg-red-400 overflow-hidden">
-                 {/* <Image src="/avatar2.jpg" alt="Instrutor 2" fill className="object-cover" /> */}
-            </div>
-        </div>
-    );
+  return (
+    <div className="flex -space-x-2 items-center">
+      <div className="w-7 h-7 border-2 border-white rounded-full bg-blue-500 shadow-sm" />
+      <div className="w-7 h-7 border-2 border-white rounded-full bg-indigo-400 shadow-sm" />
+    </div>
+  );
 }

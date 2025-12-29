@@ -1,14 +1,28 @@
-// components/CustomModal.jsx
-import { X, AlertTriangle, CheckCircle } from 'lucide-react';
-import React from 'react';
+// components/CustomModal.tsx
+"use client";
 
-const CustomModal = ({ visible, onClose, title, message }) => {
+import { X, AlertTriangle, CheckCircle } from "lucide-react";
+import React from "react";
+
+interface CustomModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+}
+
+const CustomModal: React.FC<CustomModalProps> = ({
+  visible,
+  onClose,
+  title,
+  message,
+}) => {
   if (!visible) return null;
 
-  // Determinar o ícone e a cor com base no título (pode ser ajustado)
-  const isError = title.toLowerCase().includes('erro');
+  // Determinar o ícone e a cor com base no título
+  const isError = title.toLowerCase().includes("erro");
   const Icon = isError ? AlertTriangle : CheckCircle;
-  const iconColor = isError ? 'text-red-500' : 'text-green-500';
+  const iconColor = isError ? "text-red-500" : "text-green-500";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

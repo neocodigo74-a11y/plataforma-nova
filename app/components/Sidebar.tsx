@@ -21,7 +21,7 @@ import {
   Settings,
   GraduationCap,
   LogOut,
-  User,
+ 
   User2,
   Briefcase,
 } from "lucide-react";
@@ -227,7 +227,7 @@ export default function Sidebar({
         <SidebarItem
           icon={<Users size={13} />}
           label="Comunidade"
-          onClick={() => onNavigate("Community")}
+        
         />
       </div>
 
@@ -251,10 +251,10 @@ export default function Sidebar({
           <Plus size={11} />
         </div>
         <SidebarItem icon={<GraduationCap size={13} />} label="Meus Aprendizados"     onClick={() => onNavigate("Aprendizados")}/>
-        <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" onClick={() => onNavigate("Detalhes")} />
-        <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos" />
+        <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" />
+        <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos"  />
         <SidebarItem icon={<Briefcase size={13} />} label="Freelancer rojetos" />
-        <SidebarItem icon={<Trash2 size={16} />} label="Trash" onClick={() => onNavigate("Hack")}/>
+        <SidebarItem icon={<Trash2 size={16} />} label="Trash" />
       </div>
 
       <hr className="my-3 mx-3 border-t border-zinc-200" /> 

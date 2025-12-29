@@ -8,7 +8,7 @@ import DetalheCurso from "./DetalheCurso";
 /* =========================
    Tipagem do Curso
 ========================= */
-interface Course {
+export interface Course {
   id: number;
   image: string;
   isRecommended: boolean;
@@ -16,14 +16,18 @@ interface Course {
   title: string;
   description: string;
   rating: number;
-  reviews: string;
-  grup:string;
+  reviews: number; // ⚡ agora é number
+  grup: string;
   details: string;
   recommendedText: string;
   tags: string[];
 }
 
-export default function AllSkillsSections({ onCourseSelect }) {
+interface AllSkillsSectionsProps {
+  onCourseSelect: (course: Course) => void;
+}
+
+export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsProps) {
   const [coursesByGroup, setCoursesByGroup] = useState<Record<string, Course[]>>({});
   const [loading, setLoading] = useState(true);
   const [userOnboarding, setUserOnboarding] = useState<{
@@ -87,40 +91,34 @@ export default function AllSkillsSections({ onCourseSelect }) {
       ========================= */
       const grouped: Record<string, Course[]> = {};
 
-      // Normalizamos os critérios do usuário uma única vez
+      // Normalizamos os critérios do usuário
       const objetivoUser = onboardingData.objetivo?.trim().toLowerCase();
-      const interessesUser = onboardingData.funcoes_interesse?.map(f => f.trim().toLowerCase()) || [];
+      const interessesUser = onboardingData.funcoes_interesse?.map((f: string) => f.trim().toLowerCase()) || [];
 
       cursosData.forEach((curso: any) => {
-        // Normalizamos as tags do curso
         const tagsCurso = curso.tags?.map((t: string) => t.trim().toLowerCase()) || [];
 
-        // Critério A: Alguma tag do curso está na lista de interesses do usuário?
-        const matchInteresse = tagsCurso.some(tag => interessesUser.includes(tag));
-        
-        // Critério B: Alguma tag do curso é igual ao objetivo principal?
+        const matchInteresse = tagsCurso.some((tag: string) => interessesUser.includes(tag));
         const matchObjetivo = objetivoUser ? tagsCurso.includes(objetivoUser) : false;
 
-        // Se não bater em nada, ignora este curso
         if (!matchInteresse && !matchObjetivo) return;
 
-        // Se passou no filtro, adiciona ao grupo
         const nomeGrupo = curso.grupo || "Geral";
         if (!grouped[nomeGrupo]) grouped[nomeGrupo] = [];
 
         grouped[nomeGrupo].push({
-          id: curso.id,
+          id: Number(curso.id),
           image: curso.imagem,
-          grup:curso.grupo,
-          isRecommended: curso.recomendado,
+          grup: curso.grupo || "Geral",
+          isRecommended: Boolean(curso.recomendado),
           provider: curso.fornecedores?.nome || "Desconhecido",
           title: curso.titulo,
           description: curso.descricao,
-          rating: curso.avaliacao,
-          reviews: curso.avaliacoes_texto,
-          details: curso.detalhes,
-          recommendedText: curso.texto_recomendado,
-          tags: curso.tags, // Mantemos as tags originais para exibição
+          rating: Number(curso.avaliacao) || 0,
+          reviews: Number(curso.avaliacoes_texto) || 0, // ⚡ conversão para number
+          details: curso.detalhes || "",
+          recommendedText: curso.texto_recomendado || "",
+          tags: curso.tags || [],
         });
       });
 
@@ -159,18 +157,14 @@ export default function AllSkillsSections({ onCourseSelect }) {
   if (loading) return <div className="text-center py-20">Carregando cursos...</div>;
   if (!userOnboarding) return <div className="text-center py-20">Perfil não encontrado.</div>;
   if (Object.keys(coursesByGroup).length === 0)
-    return (
-      <div className="text-center py-20">
-        Nenhum curso disponível para seu objetivo atual.
-      </div>
-    );
+    return <div className="text-center py-20">Nenhum curso disponível para seu objetivo atual.</div>;
 
   /* =========================
      LISTA DE CARROSSEL
   ========================= */
- return (
+  return (
     <div className="bg-white min-h-screen">
-      <div className="max-w-ful mx-auto px-4 py-10 space-y-12">
+      <div className="max-w-full mx-auto px-4 py-1 space-y-12">
         {Object.entries(coursesByGroup).map(([group, courses]) => (
           <CourseCarouselSection
             key={group}
@@ -178,7 +172,7 @@ export default function AllSkillsSections({ onCourseSelect }) {
             courses={courses}
             tags={["Todos", ...new Set(courses.flatMap(c => c.tags || []))]}
             activeTag="Todos"
-            onCourseSelect={onCourseSelect} // Agora usa a prop vinda do pai
+            onCourseSelect={onCourseSelect}
           />
         ))}
       </div>
