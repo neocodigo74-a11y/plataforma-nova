@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 interface Props {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
+  onSelectContent: (key: string) => void; // ✅ novo prop
 }
 
 // Tipagem para as informações do usuário
@@ -21,7 +22,8 @@ type AuthUser = { id: string; email?: string };
 type MensagemPrivada = { destinatario_id: string };
 type Notificacao = { recebido_por: string };
 
-export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
+export default function MobileHeader({ onToggleSidebar, sidebarOpen, onSelectContent }: Props) {
+
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
@@ -195,21 +197,22 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen }: Props) {
       {/* Direita: notificações / mensagens */}
       <div className="flex items-center gap-4">
         {/* Ícone de Adicionar Usuário */}
-        <button onClick={() => router.push("/usuarios")}>
-          <UserPlus size={20} className="text-gray-600" />
-        </button>
+       <button onClick={() => onSelectContent("Networking")}>
+  <UserPlus size={20} className="text-gray-600" />
+</button>
+
 
         {/* Ícone de Notificações com Badge */}
-        {renderBadge(
-          unreadNotifications,
-          () => router.push("/notificacoes"),
-          <Bell size={20} className="text-gray-600" />
-        )}
+    {renderBadge(
+  unreadNotifications,
+  () => onSelectContent("Notificacoes"), // ❌ antes: router.push("/notificacoes")
+  <Bell size={20} className="text-gray-600" />
+)}
 
         {/* Ícone de Mensagens com Badge */}
         {renderBadge(
           unreadMessages,
-          () => router.push("/mensagens"),
+           () => onSelectContent("Mensagens"),
           <MessageCircle size={20} className="text-gray-600" />
         )}
       </div>

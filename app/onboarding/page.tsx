@@ -15,6 +15,7 @@ const stepsTotal = 6;
 export default function OnboardingNOVA() {
   const [step, setStep] = useState(1);
   const [checkingAuth, setCheckingAuth] = useState(true);
+const [nomeUsuario, setNomeUsuario] = useState("");
 
   // Dados do onboarding
   const [tipoConta, setTipoConta] = useState("");
@@ -26,31 +27,35 @@ export default function OnboardingNOVA() {
 
   // 🔹 Verifica login e onboarding
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.replace("/login"); // Não logado → login
-        return;
-      }
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
 
-      // Buscar perfil
-      const { data: profile } = await supabase
-        .from("usuarios")
-        .select("onboarded")
-        .eq("id", user.id)
-        .single();
+    // Buscar perfil
+    const { data: profile } = await supabase
+      .from("usuarios")
+      .select("onboarded, nome")
+      .eq("id", user.id)
+      .single();
 
-      if (profile?.onboarded) {
-        router.replace("/academia"); // Já fez onboarding → AppContent
-        return;
-      }
+    if (profile?.onboarded) {
+      router.replace("/academia");
+      return;
+    }
 
-      setCheckingAuth(false); // Permite renderizar tela
-    };
+    if (profile?.nome) setNomeUsuario(profile.nome);
+    console.log("Profile:", profile);
 
-    checkUser();
-  }, [router]);
+    setCheckingAuth(false);
+  };
+
+  checkUser();
+}, [router]);
+
 
   function next() { setStep((s) => Math.min(s + 1, stepsTotal)); }
   function back() { setStep((s) => Math.max(s - 1, 1)); }
@@ -128,7 +133,9 @@ export default function OnboardingNOVA() {
             {/* PASSO 1 - Bem-vindo */}
             {step === 1 && (
               <div className="text-center space-y-4">
-                <h1 className="text-2xl font-bold">Bem-vindo ao NOVA</h1>
+             <h1 className="text-2xl font-bold">
+      Bem-vindo ao NOVA{nomeUsuario ? `, ${nomeUsuario}` : ""}
+    </h1>
                 <p className="text-gray-600">Onde conhecimento validado se conecta a oportunidades reais.</p>
                 <div className="text-sm text-gray-500">Aprender → Certificar → Publicar → Conectar → Evoluir</div>
                 <button onClick={next} className="btn-primary">Começar</button>

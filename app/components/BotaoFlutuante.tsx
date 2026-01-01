@@ -54,7 +54,7 @@ export default function BotaoFlutuante() {
       color: "bg-black",
       onClick: () => {
         alternarMenu();
-        router.push("/funcionalidade/PublicarOpcoes");
+        router.push("/publicar");
       },
     },
   ];

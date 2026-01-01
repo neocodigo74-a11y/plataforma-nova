@@ -105,7 +105,7 @@ export default function DesktopHeader() {
       {/* Coluna direita – ícones e badges */}
       <div className="flex justify-end items-center gap-5">
         {/* Adicionar usuário */}
-        <button onClick={() => router.push("/usuarios")}>
+        <button onClick={() => router.push("/networking")}>
           <UserPlus size={20} className="text-gray-600 hover:text-gray-900 transition" />
         </button>
 

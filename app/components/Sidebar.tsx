@@ -223,12 +223,13 @@ export default function Sidebar({
 
       {/* MENU */}
       <div className="mt-2 px-2 flex flex-col gap-0.5">
-        <SidebarItem icon={<Clock size={13} />} label="Recents" active  onClick={() => onNavigate("Home")} />
-        <SidebarItem
-          icon={<Users size={13} />}
-          label="Comunidade"
-        
-        />
+        <SidebarItem icon={<LayoutDashboard size={13} />} label="Cursos" active  onClick={() => onNavigate("Home")} />
+     <SidebarItem
+  icon={<Users size={13} />}
+  label="Comunidade"
+  onClick={() => onNavigate("Comunidade")}
+/>
+
       </div>
 
       <hr className="my-3 mx-3 border-zinc-200" />
@@ -252,7 +253,7 @@ export default function Sidebar({
         </div>
         <SidebarItem icon={<GraduationCap size={13} />} label="Meus Aprendizados"     onClick={() => onNavigate("Aprendizados")}/>
         <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" />
-        <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos"  />
+        <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos" onClick={() => onNavigate("Arquivos")}   />
         <SidebarItem icon={<Briefcase size={13} />} label="Freelancer rojetos" />
         <SidebarItem icon={<Trash2 size={16} />} label="Trash" />
       </div>

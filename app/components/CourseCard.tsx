@@ -1,6 +1,7 @@
 "use client";
 
-import { Star, ChevronRight, Bookmark } from 'lucide-react';
+import { Star, ChevronRight, Bookmark } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Course {
   id: number;
@@ -14,48 +15,69 @@ interface Course {
 }
 
 interface CourseCardProps {
-  course: {
-    id: number;
-    title: string;
-    description: string;
-    rating: string | number; // aceita string ou number
-    reviews: string | number; // aceita string ou number
-    image: string;
-    provider: string;
-    tags: string[];
-    isRecommended: boolean;
-    grup: string;
-    details: string;
-    recommendedText: string;
-  };
-  onClick: () => void;
+  course: {
+    id: number;
+    title?: string; // ⬅️ ALTERADO: Agora usa 'title'
+    description: string;
+    rating: string | number;
+    reviews: string | number;
+    image: string;
+    provider: string;
+    tags: string[];
+    isRecommended: boolean;
+    grup: string;
+    details: string;
+    recommendedText: string;
+    slug?: string;
+  };
+  onClick: () => void;
 }
 
-
 export default function CourseCard({ course, onClick }: CourseCardProps) {
+  const router = useRouter();
+
+  // Função para gerar slug temporário se não existir
+  const gerarSlugTemporario = (title?: string) => {
+    if (!title) return "curso-sem-titulo";
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  };
+
+  const handleClick = () => {
+    console.log("🚀 Course clicado:", course); // Log completo do objeto
+    const slug = course.slug || gerarSlugTemporario(course.title);
+    console.log("📝 Slug a usar:", slug); // Log do slug que será usado
+
+    if (!slug) {
+      console.error("❌ Curso sem slug e sem título!", course);
+      return;
+    }
+
+    router.push(`/cursos/${slug}`);
+  };
+
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-2xl transition-all duration-300 flex flex-col h-full overflow-hidden"
     >
       {/* Container da Imagem */}
       <div className="relative h-44 overflow-hidden">
-        <img 
-          src={course.image} 
-          alt={course.title}
+        <img
+          src={course.image}
+          alt={course.title || "Curso"}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-
         {course.isRecommended && (
           <div className="absolute top-3 left-3 flex gap-2">
-             <span className="px-3 py-1 bg-blue-600 text-[10px] uppercase tracking-wider font-bold text-white rounded-full shadow-lg">
+            <span className="px-3 py-1 bg-blue-600 text-[10px] uppercase tracking-wider font-bold text-white rounded-full shadow-lg">
               Recomendado
             </span>
           </div>
         )}
-        
         <button className="absolute top-3 right-3 p-1.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-600 hover:text-blue-600 transition-colors shadow-sm">
           <Bookmark size={16} />
         </button>
@@ -68,7 +90,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
         </span>
 
         <h3 className="text-md font-bold text-gray-900 leading-tight mb-2 group-hover:text-blue-700 transition-colors line-clamp-2">
-          {course.title}
+          {course.title || "Curso sem título"}
         </h3>
 
         <p className="text-sm text-gray-500 line-clamp-2 mb-4">

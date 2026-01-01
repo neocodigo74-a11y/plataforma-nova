@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Mail, Lock, Eye } from "lucide-react";
+import Image from "next/image";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -11,7 +13,7 @@ export default function Login() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const router = useRouter();
 
-  // 🔹 VERIFICA SE JÁ ESTÁ LOGADO
+  // 🔹 Verifica se já está logado
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -19,12 +21,11 @@ export default function Login() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        // Já está logado → manda direto para AppContent
-        router.replace("/academia"); // ou "/app" dependendo da rota do AppContent
+        router.replace("/academia");
         return;
       }
 
-      setCheckingAuth(false); // não logado → exibe login
+      setCheckingAuth(false);
     };
 
     checkUser();
@@ -32,10 +33,12 @@ export default function Login() {
 
   async function handleLogin() {
     setLoading(true);
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
     setLoading(false);
 
     if (error) {
@@ -43,43 +46,116 @@ export default function Login() {
       return;
     }
 
-    // Login bem-sucedido → redireciona para AppContent
-    router.replace("/academia"); // substitui a rota
+    router.replace("/academia");
   }
 
-  // 🔹 enquanto checa auth, não renderiza login
+  async function handleGoogleLogin() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+    });
+  }
+
   if (checkingAuth) return null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900">
-      <div className="w-full max-w-sm bg-slate-900 p-6 rounded-xl">
-        <h1 className="text-xl font-bold mb-4 text-white">Entrar no NOVA</h1>
+    <div className="min-h-screen bg-[#f5f6fa] flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+        
+        {/* LOGO */}
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/nova.svg" // ajusta o caminho do logo
+            alt="VestiLink"
+            width={160}
+            height={40}
+          />
+        </div>
 
-        <input
-          type="email"
-          className="w-full mb-3 p-2 rounded bg-slate-800 text-white placeholder-gray-400"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {/* TÍTULO */}
+        <h1 className="text-2xl font-bold text-center text-gray-900">
+          Entrar na sua conta
+        </h1>
+        <p className="text-center text-gray-500 mt-1">
+          Digite suas credenciais para acessar
+        </p>
 
-        <input
-          type="password"
-          className="w-full mb-4 p-2 rounded bg-slate-800 text-white placeholder-gray-400"
-          placeholder="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* GOOGLE */}
+        <button
+          onClick={handleGoogleLogin}
+          className="mt-6 w-full flex items-center justify-center gap-3 border border-gray-300 rounded-xl py-3 font-medium hover:bg-gray-50 transition"
+        >
+          <Image src="/google.svg" alt="Google" width={20} height={20} />
+          Entrar com Google
+        </button>
 
+        {/* DIVIDER */}
+        <div className="flex items-center my-6">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="px-3 text-xs text-gray-400">
+            OU CONTINUE COM EMAIL
+          </span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        {/* EMAIL */}
+        <div className="relative mb-4">
+          <Mail className="absolute left-3 top-3.5 text-gray-400" size={18} />
+          <input
+            type="email"
+            placeholder="seu@email.com"
+            className="w-full pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        {/* SENHA */}
+        <div className="relative mb-2">
+          <Lock className="absolute left-3 top-3.5 text-gray-400" size={18} />
+          <input
+            type="password"
+            placeholder="Senha"
+            className="w-full pl-10 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <Eye className="absolute right-3 top-3.5 text-gray-400" size={18} />
+        </div>
+
+        {/* ESQUECEU SENHA */}
+        <div className="text-right mb-6">
+        <button
+  onClick={() => router.push("/forgot-password")}
+  className="text-sm text-purple-600 hover:underline"
+>
+  Esqueceu a senha?
+</button>
+
+        </div>
+
+        {/* BOTÃO ENTRAR */}
         <button
           onClick={handleLogin}
           disabled={loading}
-          className={`w-full py-2 rounded font-semibold text-white transition ${
-            loading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className="w-full py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-600 to-purple-500 hover:opacity-90 transition"
         >
           {loading ? "Entrando..." : "Entrar"}
         </button>
+
+        {/* CRIAR CONTA */}
+        <p className="text-center text-sm text-gray-600 mt-6">
+          Não tem uma conta?{" "}
+          <a href="/register" className="text-purple-600 font-medium hover:underline">
+            Criar conta
+          </a>
+        </p>
+
+        {/* VOLTAR */}
+        <div className="text-center mt-6">
+          <a href="/" className="text-sm text-gray-400 hover:underline">
+            ← Voltar para início
+          </a>
+        </div>
       </div>
     </div>
   );
