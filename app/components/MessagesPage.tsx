@@ -4,15 +4,19 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import 'dayjs/locale/pt-br';
-import { LucideUser, LucideUsers, LucideSearch } from "lucide-react";
-import ChatPage from "./ChatPage"; // ✅ Importa o ChatPage
+import "dayjs/locale/pt-br";
+import {
+  LucideUser,
+  LucideUsers,
+  LucideSearch,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 
 dayjs.extend(relativeTime);
-dayjs.locale('pt-br');
+dayjs.locale("pt-br");
 
 interface ChatItem {
-  tipo: 'privado' | 'grupo';
+  tipo: "privado" | "grupo";
   contatoId?: string;
   id?: string;
   nome: string;
@@ -22,143 +26,171 @@ interface ChatItem {
   naoLidas: number;
 }
 
-const useChatData = (userId: string | null) => {
+export default function MessagesPage() {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [itensChat, setItensChat] = useState<ChatItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchConversasEGrupos = async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const { data: mensagensPrivadas } = await supabase
-        .from('mensagens_privadas')
-        .select('remetente_id, destinatario_id, conteudo, img_url, created_at, visualizado')
-        .or(`remetente_id.eq.${userId},destinatario_id.eq.${userId}`)
-        .order('created_at', { ascending: false });
+  /* =========================
+     USUÁRIO
+  ========================= */
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) return;
+      setUserId(data.user.id);
+    });
+  }, []);
 
-      const contatosMap = new Map<string, ChatItem>();
-      mensagensPrivadas?.forEach(msg => {
-        const contatoId = msg.remetente_id === userId ? msg.destinatario_id : msg.remetente_id;
-        if (!contatosMap.has(contatoId)) {
-          contatosMap.set(contatoId, {
-            tipo: 'privado',
+  /* =========================
+     BUSCAR CONVERSAS
+  ========================= */
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchConversas = async () => {
+      setLoading(true);
+
+      const { data: mensagens } = await supabase
+        .from("mensagens_privadas")
+        .select("remetente_id, destinatario_id, conteudo, img_url, created_at, visualizado")
+        .or(`remetente_id.eq.${userId},destinatario_id.eq.${userId}`)
+        .order("created_at", { ascending: false });
+
+      const map = new Map<string, ChatItem>();
+
+      mensagens?.forEach((msg) => {
+        const contatoId =
+          msg.remetente_id === userId
+            ? msg.destinatario_id
+            : msg.remetente_id;
+
+        if (!map.has(contatoId)) {
+          map.set(contatoId, {
+            tipo: "privado",
             contatoId,
-            nome: '',
+            nome: "",
             foto: null,
-            ultimaMensagem: msg.conteudo || (msg.img_url ? '📷 Imagem' : ''),
+            ultimaMensagem:
+              msg.conteudo || (msg.img_url ? "📷 Imagem" : ""),
             dataUltimaMensagem: msg.created_at,
             naoLidas: 0,
           });
         }
+
         if (msg.destinatario_id === userId && !msg.visualizado) {
-          contatosMap.get(contatoId)!.naoLidas += 1;
+          map.get(contatoId)!.naoLidas++;
         }
       });
 
       const { data: perfis } = await supabase
-        .from('usuarios')
-        .select('id, nome, foto_perfil')
-        .in('id', Array.from(contatosMap.keys()));
+        .from("usuarios")
+        .select("id, nome, foto_perfil")
+        .in("id", Array.from(map.keys()));
 
-      const conversas = perfis?.map(p => ({
-        ...contatosMap.get(p.id)!,
-        nome: p.nome,
-        foto: p.foto_perfil
-      })) || [];
+      const conversas =
+        perfis?.map((p) => ({
+          ...map.get(p.id)!,
+          nome: p.nome,
+          foto: p.foto_perfil,
+        })) || [];
 
-      setItensChat(conversas.sort(
-        (a, b) => new Date(b.dataUltimaMensagem).getTime() - new Date(a.dataUltimaMensagem).getTime()
-      ));
-    } catch (error) {
-      console.error('Erro ao buscar conversas:', error);
-    } finally {
+      setItensChat(
+        conversas.sort(
+          (a, b) =>
+            new Date(b.dataUltimaMensagem).getTime() -
+            new Date(a.dataUltimaMensagem).getTime()
+        )
+      );
+
       setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
-    if (userId) fetchConversasEGrupos();
+    fetchConversas();
   }, [userId]);
 
-  return { itensChat, loading, fetchConversasEGrupos };
-};
-
-const MessagesPage = () => {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [chatAbertoId, setChatAbertoId] = useState<string | null>(null); // ✅ id da conversa selecionada
-  const { itensChat, loading } = useChatData(userId);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data?.user) return;
-      setUserId(data.user.id);
-    };
-    fetchUser();
-  }, []);
-
-  const filtrarItensChat = useMemo(() => {
+  /* =========================
+     FILTRO
+  ========================= */
+  const conversasFiltradas = useMemo(() => {
     if (!searchQuery) return itensChat;
     const q = searchQuery.toLowerCase();
-    return itensChat.filter(i => 
-      i.nome.toLowerCase().includes(q) || i.ultimaMensagem.toLowerCase().includes(q)
+    return itensChat.filter(
+      (i) =>
+        i.nome.toLowerCase().includes(q) ||
+        i.ultimaMensagem.toLowerCase().includes(q)
     );
-  }, [itensChat, searchQuery]);
+  }, [searchQuery, itensChat]);
 
-  const formatarTempo = (data: string) => {
-    if (!data || data === new Date(0).toISOString()) return '';
-    return dayjs(data).fromNow(true);
-  };
+  if (loading)
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Carregando...
+      </div>
+    );
 
-  if (loading) return <div className="flex justify-center items-center h-screen">Carregando...</div>;
-
-  // ✅ Se uma conversa estiver aberta, renderiza o ChatPage
-  if (chatAbertoId) {
-    return <ChatPage userId={userId} contatoId={chatAbertoId} onBack={() => setChatAbertoId(null)} />;
-  }
-
+  /* =========================
+     RENDER
+  ========================= */
   return (
-    <div className="p-4 py-9 max-w-2xl mx-auto">
-      <div className="flex items-center bg-gray-100 rounded-full p-2 mb-4">
-        <LucideSearch className="w-5 h-5 text-gray-400 mr-2" />
+    <div className=" w-full  py-9">
+      {/* BUSCA */}
+      <div className="mb-4 flex items-center rounded-full bg-gray-100 p-2">
+        <LucideSearch className="mr-2 h-5 w-5 text-gray-400" />
         <input
-          type="text"
           className="flex-1 bg-transparent outline-none"
-          placeholder="Buscar conversa ou grupo"
+          placeholder="Buscar conversa"
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      <ul className="divide-y divide-gray-200">
-        {filtrarItensChat.map(item => (
+      {/* LISTA */}
+    <ul className="divide-y divide-gray-200">
+        {conversasFiltradas.map((item) => (
           <li
-            key={item.tipo === 'grupo' ? `grupo-${item.id}` : `privado-${item.contatoId}`}
+            key={item.contatoId}
+            onClick={() => router.push(`/chat/${item.contatoId}`)}
             className="flex items-center p-3 hover:bg-gray-50 rounded-md cursor-pointer"
-            onClick={() => setChatAbertoId(item.contatoId!)} // abre ChatPage
           >
-            <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-              {item.tipo === 'grupo' ? <LucideUsers /> : item.foto ? <img src={item.foto} className="w-12 h-12 rounded-full object-cover" /> : <LucideUser />}
+            <div className="mr-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-300">
+              {item.foto ? (
+                <img
+                  src={item.foto}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              ) : (
+                <LucideUser />
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">{item.nome}</p>
-              <p className={`text-sm text-gray-500 truncate ${item.naoLidas > 0 ? 'font-bold text-gray-700' : ''}`}>{item.ultimaMensagem}</p>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{item.nome}</p>
+              <p
+                className={`truncate text-sm ${
+                  item.naoLidas ? "font-bold text-gray-800" : "text-gray-500"
+                }`}
+              >
+                {item.ultimaMensagem}
+              </p>
             </div>
-            <div className="text-xs text-gray-400 ml-2">
-              {formatarTempo(item.dataUltimaMensagem)}
-              {item.naoLidas > 0 && item.tipo === 'privado' && (
-                <span className="ml-2 bg-gray-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">{item.naoLidas}</span>
+
+            <div className="ml-2 text-right text-xs text-gray-400">
+              {dayjs(item.dataUltimaMensagem).fromNow(true)}
+              {item.naoLidas > 0 && (
+                <div className="mt-1 rounded-full bg-gray-800 px-2 text-white">
+                  {item.naoLidas}
+                </div>
               )}
             </div>
           </li>
         ))}
-        {filtrarItensChat.length === 0 && (
-          <li className="text-center text-gray-400 py-4">Nenhuma conversa encontrada.</li>
-        )}
       </ul>
+
+
+
+      
     </div>
   );
-};
-
-export default MessagesPage;
+}
