@@ -13,8 +13,8 @@ import DesktopHeader from "./DesktopHeader";
 
 import BotaoFlutuante from "./BotaoFlutuante";
 import CareerDashboard from "./CareerDashboard";
-import AdvancedMicrolearning from "./Microlearning";
-import AcademicLibrary from "./AcademicLibrary";
+
+
 import AreaMembros from "./AreaMembros";
 import PerfilPage from "./PerfilPage";
 import PwaInstallAndroid from "./pwa/PwaInstallBanner";
@@ -80,8 +80,8 @@ const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
       />
     ),
     Perfil: <PerfilPage />,
-    Artigos: <AcademicLibrary />,
-    Micro: <AdvancedMicrolearning />,
+
+   
     Membros: (
       <AreaMembros
         curso={selectedMemberCourse}

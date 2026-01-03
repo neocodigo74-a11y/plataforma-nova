@@ -4,19 +4,20 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Brain, Rocket, Clock, ChevronRight, BookOpen, Loader2, CheckCircle2 } from "lucide-react";
 
-// Tipagem atualizada para os dados da VIEW
+// Tipagem para cursos e microaprendizados
 interface Inscricao {
-  inscricao_id: string;
-  curso_id: string;
-  curso_titulo: string;
-  data_inscricao: string;
-  total_aulas: number;
-  aulas_concluidas: number;
+  id: number;
+  titulo: string;
+  tipo: "curso" | "micro";
+  total_aulas?: number; // apenas cursos
+  aulas_concluidas?: number; // apenas cursos
+  duracao_min?: number; // apenas micro
+  perguntas_count?: number; // apenas micro
   concluido: boolean;
 }
 
 interface CareerDashboardProps {
-  onCourseSelect: (curso: any) => void;
+  onCourseSelect: (curso: Inscricao) => void;
 }
 
 export default function DashboardClone({ onCourseSelect }: CareerDashboardProps) {
@@ -24,7 +25,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
   const [objetivo, setObjetivo] = useState("");
   const [funcoesInteresse, setFuncoesInteresse] = useState<string[]>([]);
   const [greeting, setGreeting] = useState("");
-  
+
   const [cursosInscritos, setCursosInscritos] = useState<Inscricao[]>([]);
   const [loadingCursos, setLoadingCursos] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState<"andamento" | "concluido">("andamento");
@@ -50,25 +51,50 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
     if (onboarding?.objetivo) setObjetivo(onboarding.objetivo);
     if (onboarding?.funcoes_interesse) setFuncoesInteresse(onboarding.funcoes_interesse);
 
-    // 2. BUSCAR CURSOS PELA VIEW (Muito mais rápido)
-    const { data: inscricoes, error } = await supabase
+    // 2. BUSCAR CURSOS PELA VIEW
+    const { data: inscricoesCursos } = await supabase
       .from("dashboard_cursos_progresso")
       .select("*")
       .eq("usuario_id", user.id)
       .order("data_inscricao", { ascending: false });
 
-    if (!error && inscricoes) {
-      // Processa a flag 'concluido' localmente baseada nos números da view
-      const processados = inscricoes.map(c => ({
-        ...c,
-        concluido: c.total_aulas > 0 && c.aulas_concluidas >= c.total_aulas
-      }));
-      setCursosInscritos(processados);
-    }
+    // 3. BUSCAR MICROAPRENDIZADOS
+    const { data: inscricoesMicro } = await supabase
+      .from("dashboard_micro_progresso")
+      .select("*")
+      .eq("usuario_id", user.id)
+      .order("data_inscricao", { ascending: false });
+
+    const todos: Inscricao[] = [];
+
+    // Processar cursos
+    inscricoesCursos?.forEach(c => {
+      todos.push({
+        id: c.curso_id,
+        titulo: c.curso_titulo,
+        tipo: "curso",
+        total_aulas: c.total_aulas,
+        aulas_concluidas: c.aulas_concluidas,
+        concluido: c.total_aulas > 0 && c.aulas_concluidas >= c.total_aulas,
+      });
+    });
+
+    // Processar microaprendizados
+    inscricoesMicro?.forEach(m => {
+      todos.push({
+        id: m.micro_id,
+        titulo: m.micro_titulo,
+        tipo: "micro",
+        duracao_min: m.duracao_min,
+        perguntas_count: m.perguntas_count,
+        concluido: m.perc_concluido >= 100, // ou outro campo da view
+      });
+    });
+
+    setCursosInscritos(todos);
     setLoadingCursos(false);
   };
 
-  // Filtragem para as abas
   const cursosAndamento = cursosInscritos.filter(c => !c.concluido);
   const cursosConcluidos = cursosInscritos.filter(c => c.concluido);
   const cursosExibidos = abaAtiva === "andamento" ? cursosAndamento : cursosConcluidos;
@@ -121,7 +147,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
               <Clock size={18} className="text-blue-600" /> Plano de aprendizado
             </h3>
             <div className="flex gap-2 mb-5">
-              {["2", "3", "4", "5", "6", "s", "d"].map((item) => (
+              {["2", "3", "4", "5", "6", "s", "d"].map(item => (
                 <span key={item} className="w-8 h-8 rounded-full border border-[#D1D5DB] flex items-center justify-center text-[12px] font-medium text-gray-500">
                   {item}
                 </span>
@@ -133,9 +159,8 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
           </div>
         </div>
 
-        {/* ÁREA CENTRAL - LISTA DE CURSOS */}
+        {/* ÁREA CENTRAL - LISTA DE CURSOS + MICRO */}
         <div className="flex flex-col">
-          {/* SELETOR DE ABAS */}
           <div className="flex gap-6 border-b border-gray-100 mb-6">
             <button 
               onClick={() => setAbaAtiva("andamento")}
@@ -156,22 +181,27 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
           ) : cursosExibidos.length > 0 ? (
             <div className="grid gap-4">
               {cursosExibidos.map((curso) => {
-                const percentual = curso.total_aulas > 0 ? Math.round((curso.aulas_concluidas / curso.total_aulas) * 100) : 0;
-                
+                const percentual = curso.tipo === "curso" && curso.total_aulas
+                  ? Math.round((curso.aulas_concluidas! / curso.total_aulas) * 100)
+                  : curso.tipo === "micro" && curso.duracao_min
+                  ? Math.round((curso.perguntas_count! / curso.duracao_min) * 100)
+                  : 0;
+
                 return (
-                  <div key={curso.inscricao_id} className="group flex flex-col md:flex-row items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition bg-white hover:border-blue-100">
+                  <div key={curso.id} className="group flex flex-col md:flex-row items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition bg-white hover:border-blue-100">
                     <div className="flex items-center gap-4 w-full">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition ${curso.concluido ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'}`}>
                         {curso.concluido ? <CheckCircle2 size={24} /> : <BookOpen size={24} />}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-[#111827]">{curso.curso_titulo}</h4>
-                        
-                        {/* BARRA DE PROGRESSO (Apenas para cursos em andamento) */}
+                        <h4 className="font-bold text-[#111827]">{curso.titulo}</h4>
                         {!curso.concluido && (
                           <div className="mt-2 w-full max-w-[250px]">
                             <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1 uppercase">
-                              <span>{curso.aulas_concluidas}/{curso.total_aulas} Aulas</span>
+                              <span>
+                                {curso.tipo === "curso" ? `${curso.aulas_concluidas}/${curso.total_aulas} Aulas` 
+                                : `${curso.perguntas_count}/${curso.duracao_min} min`}
+                              </span>
                               <span>{percentual}%</span>
                             </div>
                             <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
@@ -179,14 +209,14 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
                             </div>
                           </div>
                         )}
-                        {curso.concluido && <p className="text-xs text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Curso Finalizado</p>}
+                        {curso.concluido && <p className="text-xs text-emerald-600 font-bold mt-1 uppercase tracking-tighter">Finalizado</p>}
                       </div>
                     </div>
                     <button 
                       onClick={() => onCourseSelect(curso)}
                       className={`mt-4 md:mt-0 px-6 py-2 font-bold text-sm rounded-lg transition flex items-center gap-2 ${curso.concluido ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white' : 'bg-gray-100 text-gray-700 hover:bg-[#0056d2] hover:text-white'}`}
                     >
-                      {curso.concluido ? "Rever Curso" : "Continuar"} <ChevronRight size={16} />
+                      {curso.concluido ? "Rever" : "Continuar"} <ChevronRight size={16} />
                     </button>
                   </div>
                 );
@@ -196,7 +226,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
             <div className="flex flex-col items-center text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
               <Rocket size={36} className="text-gray-300 mb-4" />
               <h3 className="text-lg font-bold text-gray-800">
-                {abaAtiva === "andamento" ? "Nada para estudar agora" : "Nenhum curso concluído"}
+                {abaAtiva === "andamento" ? "Nada para estudar agora" : "Nenhum conteúdo concluído"}
               </h3>
               <button className="mt-6 px-8 py-3 bg-[#0056d2] text-white font-bold rounded-full hover:bg-blue-700 transition">
                 Explorar Cursos

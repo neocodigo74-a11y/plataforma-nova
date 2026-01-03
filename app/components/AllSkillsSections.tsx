@@ -6,64 +6,76 @@ import CourseCarouselSection from "./CourseCarouselSection";
 import DetalheCurso from "./DetalheCurso";
 
 /* =========================
-   Tipagem do Curso
+   Tipagem Unificada
 ========================= */
-export interface Course {
+export interface SkillItem {
   id: number;
   image: string;
   isRecommended: boolean;
   provider: string;
   title: string;
   description: string;
-  rating: number;
-  reviews: number; // ⚡ agora é number
+  rating?: number;
+  reviews?: number;
   grup: string;
-  details: string;
-  recommendedText: string;
+  details?: string;
+  recommendedText?: string;
   tags: string[];
+  type: "curso" | "micro";
+  durationMin?: number;
+    questionsCount?: number;
 }
 
 interface AllSkillsSectionsProps {
-  onCourseSelect: (course: Course) => void;
+  onCourseSelect: (course: SkillItem) => void;
 }
 
-export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsProps) {
-  const [coursesByGroup, setCoursesByGroup] = useState<Record<string, Course[]>>({});
+export default function AllSkillsSections({
+  onCourseSelect,
+}: AllSkillsSectionsProps) {
+  const [coursesByGroup, setCoursesByGroup] =
+    useState<Record<string, SkillItem[]>>({});
   const [loading, setLoading] = useState(true);
   const [userOnboarding, setUserOnboarding] = useState<{
     objetivo: string;
     funcoes_interesse: string[];
   } | null>(null);
 
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [selectedCourse, setSelectedCourse] =
+    useState<SkillItem | null>(null);
 
   /* =========================
-     Selecionar Curso
+     Selecionar Item
   ========================= */
-  const handleCourseSelect = useCallback((course: Course) => {
+  const handleCourseSelect = useCallback((course: SkillItem) => {
     setSelectedCourse(course);
   }, []);
 
   /* =========================
-     Buscar usuário + cursos
+     Buscar usuário + cursos + micro
   ========================= */
-  const fetchUserAndCourses = useCallback(async () => {
+  const fetchUserAndSkills = useCallback(async () => {
     setLoading(true);
 
     try {
-      // 1️⃣ Usuário logado
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      /* 1️⃣ Usuário logado */
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
       if (authError || !user) {
         setLoading(false);
         return;
       }
 
-      // 2️⃣ Onboarding
-      const { data: onboardingData, error: onboardingError } = await supabase
-        .from("usuarios_onboarding")
-        .select("objetivo, funcoes_interesse")
-        .eq("id", user.id)
-        .single();
+      /* 2️⃣ Onboarding */
+      const { data: onboardingData, error: onboardingError } =
+        await supabase
+          .from("usuarios_onboarding")
+          .select("objetivo, funcoes_interesse")
+          .eq("id", user.id)
+          .single();
 
       if (onboardingError || !onboardingData) {
         setLoading(false);
@@ -72,8 +84,8 @@ export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsP
 
       setUserOnboarding(onboardingData);
 
-      // 3️⃣ Cursos
-      const { data: cursosData, error: cursosError } = await supabase
+      /* 3️⃣ Cursos */
+      const { data: cursosData } = await supabase
         .from("cursos_academia")
         .select(`
           id, grupo, imagem, recomendado, titulo, descricao,
@@ -81,55 +93,112 @@ export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsP
           fornecedores (nome)
         `);
 
-      if (cursosError || !cursosData) {
-        setLoading(false);
-        return;
-      }
+      /* 4️⃣ Microaprendizados */
+      const { data: microData } = await supabase
+        .from("microaprendizados")
+        .select(`
+          id, grupo, imagem, recomendado, titulo, descricao,
+          duracao_min, perguntas_count, detalhes, texto_recomendado, tags,
+          fornecedores (nome)
+        `);
+
+      const grouped: Record<string, SkillItem[]> = {};
 
       /* =========================
-         4️⃣ FILTRO NORMALIZADO
+         Normalização do usuário
       ========================= */
-      const grouped: Record<string, Course[]> = {};
+      const objetivoUser =
+        onboardingData.objetivo?.trim().toLowerCase();
 
-      // Normalizamos os critérios do usuário
-      const objetivoUser = onboardingData.objetivo?.trim().toLowerCase();
-      const interessesUser = onboardingData.funcoes_interesse?.map((f: string) => f.trim().toLowerCase()) || [];
+      const interessesUser =
+        onboardingData.funcoes_interesse?.map((f: string) =>
+          f.trim().toLowerCase()
+        ) || [];
 
-      cursosData.forEach((curso: any) => {
-        const tagsCurso = curso.tags?.map((t: string) => t.trim().toLowerCase()) || [];
+      const matchUserCriteria = (tags: string[]) => {
+        const tagsNorm = tags.map((t) =>
+          t.trim().toLowerCase()
+        );
 
-        const matchInteresse = tagsCurso.some((tag: string) => interessesUser.includes(tag));
-        const matchObjetivo = objetivoUser ? tagsCurso.includes(objetivoUser) : false;
+        const matchInteresse = tagsNorm.some((tag) =>
+          interessesUser.includes(tag)
+        );
 
-        if (!matchInteresse && !matchObjetivo) return;
+        const matchObjetivo = objetivoUser
+          ? tagsNorm.includes(objetivoUser)
+          : false;
 
-        const nomeGrupo = curso.grupo || "Geral";
-        if (!grouped[nomeGrupo]) grouped[nomeGrupo] = [];
+        return matchInteresse || matchObjetivo;
+      };
 
-        grouped[nomeGrupo].push({
-          id: Number(curso.id),
-          image: curso.imagem,
-          grup: curso.grupo || "Geral",
-          isRecommended: Boolean(curso.recomendado),
-          provider: curso.fornecedores?.nome || "Desconhecido",
-          title: curso.titulo,
-          description: curso.descricao,
-          rating: Number(curso.avaliacao) || 0,
-          reviews: Number(curso.avaliacoes_texto) || 0, // ⚡ conversão para number
-          details: curso.detalhes || "",
-          recommendedText: curso.texto_recomendado || "",
-          tags: curso.tags || [],
-        });
-      });
+      /* =========================
+         Inserir CURSOS
+      ========================= */
+      cursosData?.forEach((curso: any) => {
+  if (!matchUserCriteria(curso.tags || [])) return;
 
-      // 5️⃣ Ordenação por recomendados
-      Object.keys(grouped).forEach(group => {
-        grouped[group].sort((a, b) => Number(b.isRecommended) - Number(a.isRecommended));
+  const grupo = curso.grupo || "Geral";
+  const groupKey = `Curso: ${grupo}`; // ⚡ Cada grupo de curso tem prefixo "Curso:"
+  if (!grouped[groupKey]) grouped[groupKey] = [];
+
+  grouped[groupKey].push({
+    id: Number(curso.id),
+    image: curso.imagem,
+    grup: grupo,
+    isRecommended: Boolean(curso.recomendado),
+    provider: curso.fornecedores?.nome || "Desconhecido",
+    title: curso.titulo,
+    description: curso.descricao,
+    rating: Number(curso.avaliacao) || 0,
+    reviews: Number(curso.avaliacoes_texto) || 0,
+    details: curso.detalhes || "",
+    recommendedText: curso.texto_recomendado || "",
+    tags: curso.tags || [],
+    type: "curso",
+  });
+});
+
+/* =========================
+   Inserir MICROAPRENDIZADOS
+========================= */
+microData?.forEach((micro: any) => {
+  if (!matchUserCriteria(micro.tags || [])) return;
+
+  const grupo = micro.grupo || "Geral";
+  const groupKey = `Microaprendizado: ${grupo}`; // ⚡ Cada microaprendizado tem prefixo diferente
+  if (!grouped[groupKey]) grouped[groupKey] = [];
+
+  grouped[groupKey].push({
+    id: Number(micro.id),
+    image: micro.imagem,
+    grup: grupo,
+    isRecommended: Boolean(micro.recomendado),
+    provider: micro.fornecedores?.nome || "Desconhecido",
+    title: micro.titulo,
+    description: micro.descricao,
+    details: micro.detalhes || "",
+    recommendedText: micro.texto_recomendado || "",
+    tags: micro.tags || [],
+    durationMin: micro.duracao_min,
+    type: "micro",
+   
+    questionsCount: micro.perguntas_count,
+  });
+});
+
+      /* =========================
+         Ordenar por recomendados
+      ========================= */
+      Object.keys(grouped).forEach((group) => {
+        grouped[group].sort(
+          (a, b) =>
+            Number(b.isRecommended) -
+            Number(a.isRecommended)
+        );
       });
 
       setCoursesByGroup(grouped);
       setLoading(false);
-
     } catch (err) {
       console.error("Erro inesperado:", err);
       setLoading(false);
@@ -137,8 +206,8 @@ export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsP
   }, []);
 
   useEffect(() => {
-    fetchUserAndCourses();
-  }, [fetchUserAndCourses]);
+    fetchUserAndSkills();
+  }, [fetchUserAndSkills]);
 
   /* =========================
      RENDER CONDICIONAL
@@ -154,10 +223,26 @@ export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsP
     );
   }
 
-  if (loading) return <div className="text-center py-20">Carregando cursos...</div>;
-  if (!userOnboarding) return <div className="text-center py-20">Perfil não encontrado.</div>;
+  if (loading)
+    return (
+      <div className="text-center py-20">
+        Carregando conteúdos...
+      </div>
+    );
+
+  if (!userOnboarding)
+    return (
+      <div className="text-center py-20">
+        Perfil não encontrado.
+      </div>
+    );
+
   if (Object.keys(coursesByGroup).length === 0)
-    return <div className="text-center py-20">Nenhum curso disponível para seu objetivo atual.</div>;
+    return (
+      <div className="text-center py-20">
+        Nenhum conteúdo disponível para seu objetivo atual.
+      </div>
+    );
 
   /* =========================
      LISTA DE CARROSSEL
@@ -165,16 +250,23 @@ export default function AllSkillsSections({ onCourseSelect }: AllSkillsSectionsP
   return (
     <div className="bg-white min-h-screen">
       <div className="max-w-full mx-auto px-4 py-1 space-y-12">
-        {Object.entries(coursesByGroup).map(([group, courses]) => (
-          <CourseCarouselSection
-            key={group}
-            title={`Habilidades em demanda para ${group}`}
-            courses={courses}
-            tags={["Todos", ...new Set(courses.flatMap(c => c.tags || []))]}
-            activeTag="Todos"
-            onCourseSelect={onCourseSelect}
-          />
-        ))}
+        {Object.entries(coursesByGroup).map(
+          ([group, items]) => (
+            <CourseCarouselSection
+              key={group}
+              title={`Habilidades em demanda para ${group}`}
+              courses={items}
+              tags={[
+                "Todos",
+                ...new Set(
+                  items.flatMap((c) => c.tags || [])
+                ),
+              ]}
+              activeTag="Todos"
+              onCourseSelect={handleCourseSelect}
+            />
+          )
+        )}
       </div>
     </div>
   );

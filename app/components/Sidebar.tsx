@@ -229,7 +229,7 @@ export default function Sidebar({
   label="Comunidade"
   onClick={() => onNavigate("Comunidade")}
 />
-
+<SidebarItem icon={<Briefcase size={13} />} label="Explorar vagas" />
       </div>
 
       <hr className="my-3 mx-3 border-zinc-200" />

@@ -1,10 +1,11 @@
 "use client";
 
-import AllSkillsSections, { Course } from "./AllSkillsSections";
+import AllSkillsSections, { SkillItem } from "./AllSkillsSections";
+
 
 
 interface HomeProps {
-  onCourseSelect: (course: Course) => void;
+  onCourseSelect: (course: SkillItem) => void;
 }
 
 export default function Home({ onCourseSelect }: HomeProps) {
@@ -12,6 +13,9 @@ export default function Home({ onCourseSelect }: HomeProps) {
     <main className="min-h-screen bg-white space-y-3 pt-1">
       {/* Entrega o "bastão" para o AllSkillsSections */}
       <AllSkillsSections onCourseSelect={onCourseSelect} />
+     
+      
+     
     </main>
   );
 }

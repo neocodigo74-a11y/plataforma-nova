@@ -7,7 +7,7 @@ import 'dayjs/locale/pt-br';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { supabase } from "@/lib/supabase";
 import { 
-  User, Calendar, Star, Book, Briefcase, MapPin, MoreHorizontal, MoreVertical 
+  User, Calendar, Star, Book, Briefcase, MapPin, MoreHorizontal, MoreVertical ,Languages, ThumbsUp 
 } from "lucide-react";
 
 dayjs.extend(relativeTime);
@@ -50,6 +50,17 @@ interface Bibliografia {
     tipo: 'Académico' | 'Profissional' | 'Eventos'; // Assumindo estes tipos baseados no filtro
     criado_em: string;
 }
+interface Idioma {
+  nome: string;
+  nivel: string;
+}
+
+interface Recomendacao {
+  id: string;
+  autor: string;
+  texto: string;
+}
+
 
 // ---------------------------------------------
 
@@ -64,6 +75,12 @@ export default function PerfilPage() {
   const [subTab, setSubTab] = useState("Todas");
   const [filtroPort, setFiltroPort] = useState("Todas");
   const [showFixedHeader, setShowFixedHeader] = useState(false);
+const [idiomas] = useState<Idioma[]>([
+  { nome: "Inglês", nivel: "Fluente" },
+  { nome: "Mandarim", nivel: "Nível Intermediário" },
+]);
+
+const [recomendacoes] = useState<Recomendacao[]>([]);
 
   // Scroll listener para fixed header
   useEffect(() => {
@@ -201,6 +218,72 @@ export default function PerfilPage() {
             </button>
           </div>
         </div>
+{/* ANEXOS */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+  {/* PROFICIÊNCIA EM IDIOMAS */}
+  <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="flex items-center gap-2 mb-4">
+      <Languages size={20} className="text-gray-700" />
+      <h3 className="font-semibold text-gray-900">
+        Proficiência em idiomas
+      </h3>
+    </div>
+
+    <div className="space-y-2">
+      {idiomas.map((idioma, i) => (
+        <div
+          key={i}
+          className="flex items-center justify-between text-sm"
+        >
+          <span className="font-medium text-gray-800">
+            {idioma.nome}
+          </span>
+          <span className="text-gray-600">
+            {idioma.nivel}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* RECOMENDAÇÕES RECEBIDAS */}
+  <div className="bg-white border border-gray-200 rounded-xl p-5">
+    <div className="flex items-center gap-2 mb-4">
+      <ThumbsUp size={20} className="text-gray-700" />
+      <h3 className="font-semibold text-gray-900">
+        Recomendações recebidas
+      </h3>
+    </div>
+
+    {recomendacoes.length === 0 ? (
+      <div className="text-sm text-gray-500">
+        Nenhuma recomendação
+      </div>
+    ) : (
+      <div className="space-y-3">
+        {recomendacoes.map(rec => (
+          <div
+            key={rec.id}
+            className="border border-gray-100 rounded-lg p-3"
+          >
+            <p className="text-sm text-gray-800">
+              {rec.texto}
+            </p>
+            <span className="text-xs text-gray-500 mt-1 block">
+              — {rec.autor}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <button className="mt-4 text-sm text-blue-600 hover:underline">
+      + Recomendar {perfil.nome.split(" ")[0]}
+    </button>
+  </div>
+
+</div>
 
         {/* Stats */}
         <div className="flex justify-around mt-6 border-t border-b border-gray-200 py-3 text-center text-sm text-gray-600">

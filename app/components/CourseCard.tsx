@@ -2,41 +2,18 @@
 
 import { Star, ChevronRight, Bookmark } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface Course {
-  id: number;
-  image: string;
-  title: string;
-  description: string;
-  provider: string;
-  isRecommended?: boolean;
-  rating?: string;
-  reviews?: string;
-}
+import { SkillItem } from "./AllSkillsSections";
 
 interface CourseCardProps {
-  course: {
-    id: number;
-    title?: string; // ⬅️ ALTERADO: Agora usa 'title'
-    description: string;
-    rating: string | number;
-    reviews: string | number;
-    image: string;
-    provider: string;
-    tags: string[];
-    isRecommended: boolean;
-    grup: string;
-    details: string;
-    recommendedText: string;
-    slug?: string;
-  };
-  onClick: () => void;
+  course: SkillItem & {
+    slug?: string;
+  };
+  onClick: () => void;
 }
 
 export default function CourseCard({ course, onClick }: CourseCardProps) {
   const router = useRouter();
 
-  // Função para gerar slug temporário se não existir
   const gerarSlugTemporario = (title?: string) => {
     if (!title) return "curso-sem-titulo";
     return title
@@ -46,15 +23,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
   };
 
   const handleClick = () => {
-    console.log("🚀 Course clicado:", course); // Log completo do objeto
     const slug = course.slug || gerarSlugTemporario(course.title);
-    console.log("📝 Slug a usar:", slug); // Log do slug que será usado
-
-    if (!slug) {
-      console.error("❌ Curso sem slug e sem título!", course);
-      return;
-    }
-
     router.push(`/cursos/${slug}`);
   };
 
@@ -63,7 +32,7 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
       onClick={handleClick}
       className="group cursor-pointer bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-2xl transition-all duration-300 flex flex-col h-full overflow-hidden"
     >
-      {/* Container da Imagem */}
+      {/* Imagem */}
       <div className="relative h-44 overflow-hidden">
         <img
           src={course.image}
@@ -85,27 +54,46 @@ export default function CourseCard({ course, onClick }: CourseCardProps) {
 
       {/* Conteúdo */}
       <div className="p-5 flex flex-col flex-grow">
+        {/* Provider */}
         <span className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
           {course.provider}
         </span>
 
+        {/* Título */}
         <h3 className="text-md font-bold text-gray-900 leading-tight mb-2 group-hover:text-blue-700 transition-colors line-clamp-2">
           {course.title || "Curso sem título"}
         </h3>
 
-        <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+        {/* Descrição */}
+        <p className="text-sm text-gray-500 line-clamp-2 mb-2">
           {course.description}
         </p>
 
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex items-center text-yellow-500">
-            <Star size={14} fill="currentColor" />
-            <span className="ml-1 text-sm font-bold text-gray-700">{course.rating || "4.8"}</span>
+        {/* Avaliação (somente para cursos) */}
+        {course.type === "curso" && (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center text-yellow-500">
+              <Star size={14} fill="currentColor" />
+              <span className="ml-1 text-sm font-bold text-gray-700">
+                {course.rating ?? "0"}
+              </span>
+            </div>
+            <span className="text-xs text-gray-400">•</span>
+            <span className="text-xs text-gray-500">
+              {course.reviews ?? "Sem avaliações"}
+            </span>
           </div>
-          <span className="text-xs text-gray-400">•</span>
-          <span className="text-xs text-gray-500">{course.reviews || "12 avaliações"}</span>
-        </div>
+        )}
 
+        {/* Microaprendizado: duração + perguntas */}
+        {course.type === "micro" && (
+          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+            {course.durationMin && <span>⏱ {course.durationMin} min</span>}
+            {course.questionsCount && <span>❓ {course.questionsCount} perguntas</span>}
+          </div>
+        )}
+
+        {/* Rodapé */}
         <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
           <span className="text-sm font-bold text-green-600">Gratuito</span>
           <button
