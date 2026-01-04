@@ -50,10 +50,18 @@ export default function Login() {
   }
 
   async function handleGoogleLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-    });
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/academia`,
+    },
+  });
+
+  if (error) {
+    alert(error.message);
   }
+}
+
 
   if (checkingAuth) return null;
 
@@ -126,7 +134,7 @@ export default function Login() {
         <div className="text-right mb-6">
         <button
   onClick={() => router.push("/forgot-password")}
-  className="text-sm text-purple-600 hover:underline"
+  className="text-sm text-blue-600 hover:underline"
 >
   Esqueceu a senha?
 </button>
@@ -137,7 +145,7 @@ export default function Login() {
         <button
           onClick={handleLogin}
           disabled={loading}
-          className="w-full py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-purple-600 to-purple-500 hover:opacity-90 transition"
+          className="w-full py-3 rounded-xl text-white font-semibold bg-black transition"
         >
           {loading ? "Entrando..." : "Entrar"}
         </button>
@@ -145,7 +153,7 @@ export default function Login() {
         {/* CRIAR CONTA */}
         <p className="text-center text-sm text-gray-600 mt-6">
           Não tem uma conta?{" "}
-          <a href="/register" className="text-purple-600 font-medium hover:underline">
+          <a href="/register" className="text-blue-600 font-medium hover:underline">
             Criar conta
           </a>
         </p>

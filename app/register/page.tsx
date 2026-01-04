@@ -136,22 +136,7 @@ export default function CadastroStepForm() {
       return;
     }
 
-    const { error: insertError } = await supabase
-      .from("usuarios")
-      .insert({
-        id: userId,
-        tipo: formData.tipoConta,
-        nome: formData.primeiroNome,
-        segundo_nome: formData.segundoNome,
-        nome_completo: formData.nomeCompleto,
-        email: formData.email,
-      });
-
-    if (insertError) {
-      alert("Erro ao salvar perfil: " + insertError.message);
-      setLoading(false);
-      return;
-    }
+   
 
     setLoading(false);
     router.replace("/academia");

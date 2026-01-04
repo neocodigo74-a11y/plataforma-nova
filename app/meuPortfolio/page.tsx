@@ -155,49 +155,67 @@ const isCriador =
 
   /* ======================= DATA ======================= */
   async function carregarPerfil() {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return setLoading(false);
+  setLoading(true);
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return setLoading(false);
 
-    const { data: usuario } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-setIsOwner(user.id === usuario.id);
+  // 1️⃣ Verifica se o usuário existe na tabela 'usuarios'
+  let { data: usuario } = await supabase
+    .from("usuarios")
+    .select("*")
+    .eq("id", user.id)
+    .single();
 
-    const { data: onboarding } = await supabase
-      .from("usuarios_onboarding")
-      .select("objetivo, funcoes_interesse")
-      .eq("id", user.id)
-      .single();
+  // 2️⃣ Se não existir, cria registro automático
+  if (!usuario) {
+    const nomeDoMetadata = user.user_metadata?.full_name || user.user_metadata?.name || "Usuário";
+    
+    const { data: novoUsuario } = await supabase.from("usuarios").insert({
+      id: user.id,
+      nome: nomeDoMetadata,
+      tipo: "Estudante", // padrão, pode ajustar conforme seu app
+      created_at: new Date().toISOString()
+    }).select("*").single();
 
-    const { data: conexoes } = await supabase
-      .from("conexoes")
-      .select("*")
-      .or(`solicitante.eq.${user.id},receptor.eq.${user.id}`);
-
-    let seguindo = 0,
-      seguidores = 0,
-      networking = 0;
-
-    conexoes?.forEach((c) => {
-      if (c.solicitante === user.id) seguindo++;
-      if (c.receptor === user.id) seguidores++;
-      if (c.status === "aprovado") networking++;
-    });
-
-    setPerfil({
-      ...usuario,
-      objetivo: onboarding?.objetivo || null,
-      funcoes_interesse: onboarding?.funcoes_interesse || [],
-      seguindo,
-      seguidores,
-      networking,
-    });
-
-    setLoading(false);
+    usuario = novoUsuario; // garante que 'usuario' tem o valor para continuar
   }
+
+  // 3️⃣ Define se é dono do perfil
+  setIsOwner(user.id === usuario.id);
+
+  // 4️⃣ Carrega dados de onboarding
+  const { data: onboarding } = await supabase
+    .from("usuarios_onboarding")
+    .select("objetivo, funcoes_interesse")
+    .eq("id", user.id)
+    .single();
+
+  // 5️⃣ Carrega conexões
+  const { data: conexoes } = await supabase
+    .from("conexoes")
+    .select("*")
+    .or(`solicitante.eq.${user.id},receptor.eq.${user.id}`);
+
+  let seguindo = 0, seguidores = 0, networking = 0;
+  conexoes?.forEach((c) => {
+    if (c.solicitante === user.id) seguindo++;
+    if (c.receptor === user.id) seguidores++;
+    if (c.status === "aprovado") networking++;
+  });
+
+  setPerfil({
+    ...usuario,
+    objetivo: onboarding?.objetivo || null,
+    funcoes_interesse: onboarding?.funcoes_interesse || [],
+    seguindo,
+    seguidores,
+    networking,
+  });
+
+  setLoading(false);
+}
+
 
   async function carregarCursos() {
   setLoadingCursos(true);

@@ -24,6 +24,7 @@ import {
  
   User2,
   Briefcase,
+  Cog,
 } from "lucide-react";
 
 type UserInfo = {
@@ -136,41 +137,60 @@ export default function Sidebar({
     );
   };
 
-  useEffect(() => {
-    const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+ useEffect(() => {
+  const init = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) return;
+    if (!user) return;
 
-      const { data } = await supabase
-        .from("usuarios")
-        .select("nome, foto_perfil")
-        .eq("id", user.id)
-        .single();
+    // Primeiro, busca sempre os dados na tabela 'usuarios'
+    const { data, error } = await supabase
+      .from("usuarios")
+      .select("nome, foto_perfil")
+      .eq("id", user.id)
+      .single();
 
-      setUserInfo(data);
-      updateUnreadNotifications(user);
-      fetchStartups(user.id);
-    };
+    if (error) {
+      console.error("Erro ao buscar usuário na tabela:", error);
+    }
 
-    init();
+    // Prioriza dados da tabela, cai no Google Auth se não tiver
+    const nome = data?.nome || user.user_metadata?.full_name || user.user_metadata?.name || "";
+    const foto = data?.foto_perfil || user.user_metadata?.avatar_url || null;
 
-    const close = () => setOpenProfileMenu(false);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, []);
+    setUserInfo({ nome, foto_perfil: foto });
+    updateUnreadNotifications(user);
+    fetchStartups(user.id);
+  };
+
+  init();
+
+  const close = () => setOpenProfileMenu(false);
+  window.addEventListener("click", close);
+  return () => window.removeEventListener("click", close);
+}, []);
+
+
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto bg-white">
       {/* TOP PROFILE */}
       <div className="px-3 pt-2 pb-2 flex items-center justify-between">
         <div className="flex items-center gap-2 relative">
-          <img
-            src={userInfo?.foto_perfil || "/avatar-default.png"}
-            className="h-6 w-6 rounded-full object-cover"
-          />
+       {userInfo?.foto_perfil ? (
+  <img
+    src={userInfo.foto_perfil}
+    alt={userInfo.nome}
+    className="h-6 w-6 rounded-full object-cover"
+  />
+) : (
+  <div className="h-6 w-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-white">
+    {userInfo?.nome?.[0].toUpperCase() || "U"}
+  </div>
+)}
+
 
           <button
             onClick={(e) => {
@@ -229,7 +249,19 @@ export default function Sidebar({
   label="Comunidade"
   onClick={() => onNavigate("Comunidade")}
 />
-<SidebarItem icon={<Briefcase size={13} />} label="Explorar vagas" />
+<div className="relative">
+  <SidebarItem
+    icon={<Briefcase size={13} />}
+    label="Explorar vagas"
+    onClick={() => onNavigate("Empregos")}
+  />
+  <span className="absolute right-2 top-1 text-[9px] bg-green-100 text-zinc-600 px-1 py-0.5 rounded">
+    Novo
+  </span>
+</div>
+
+
+            
       </div>
 
       <hr className="my-3 mx-3 border-zinc-200" />
@@ -255,7 +287,7 @@ export default function Sidebar({
         <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" />
         <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos" onClick={() => onNavigate("Arquivos")}   />
         <SidebarItem icon={<Briefcase size={13} />} label="Freelancer rojetos" />
-        <SidebarItem icon={<Trash2 size={16} />} label="Trash" />
+        <SidebarItem icon={<Cog size={16} />} label="Configuração do sistema" />
       </div>
 
       <hr className="my-3 mx-3 border-t border-zinc-200" /> 
@@ -291,7 +323,7 @@ export default function Sidebar({
       </div>
 
       <div className="px-2 mt-1">
-        <SidebarItem icon={<Star size={12} />} label="NOVA Project" />
+        <SidebarItem icon={<Star size={12} />} label="NOVA Projeto" />
       </div>
     </div>
   );

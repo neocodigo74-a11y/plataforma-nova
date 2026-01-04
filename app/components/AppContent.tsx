@@ -27,6 +27,7 @@ import Footer from "./Footer";
 import PostManagerList from "../post/page";
 import AuthorDashboardView from "./AuthorDashboardView";
 import NetworkingPage from "../components/Networking";
+import JobList from "./JobList";
 
 
 
@@ -81,7 +82,7 @@ const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
     ),
     Perfil: <PerfilPage />,
 
-   
+   Empregos: <JobList />,
     Membros: (
       <AreaMembros
         curso={selectedMemberCourse}

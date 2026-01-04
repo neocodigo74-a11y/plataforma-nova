@@ -35,7 +35,7 @@ const [nomeUsuario, setNomeUsuario] = useState("");
       return;
     }
 
-    // Buscar perfil
+    // Primeiro pega perfil da tabela
     const { data: profile } = await supabase
       .from("usuarios")
       .select("onboarded, nome")
@@ -47,14 +47,20 @@ const [nomeUsuario, setNomeUsuario] = useState("");
       return;
     }
 
-    if (profile?.nome) setNomeUsuario(profile.nome);
-    console.log("Profile:", profile);
+    // 🔹 Pega nome do metadata se vier do Google, senão da tabela
+    const nomeDoMetadata = user.user_metadata?.full_name || user.user_metadata?.name;
+    if (nomeDoMetadata) {
+      setNomeUsuario(nomeDoMetadata);
+    } else if (profile?.nome) {
+      setNomeUsuario(profile.nome);
+    }
 
     setCheckingAuth(false);
   };
 
   checkUser();
 }, [router]);
+
 
 
   function next() { setStep((s) => Math.min(s + 1, stepsTotal)); }
@@ -69,38 +75,45 @@ const [nomeUsuario, setNomeUsuario] = useState("");
   };
 
   async function finishOnboarding() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
 
-    // Salva dados do onboarding
-    const { error: onboardingError } = await supabase
-      .from("usuarios_onboarding")
-      .upsert({
-        id: user.id,
-        tipo_conta: tipoConta,
-        objetivo,
-        funcoes_interesse: funcoesInteresse,
-        localizacao,
-      });
+  // 🔹 Nome do usuário do metadata (Google) ou da variável
+  const nomeParaSalvar = nomeUsuario || user.user_metadata?.full_name || user.user_metadata?.name;
 
-    if (onboardingError) {
-      alert("Erro ao salvar perfil: " + onboardingError.message);
-      return;
-    }
+  // 1️⃣ Atualiza tabela 'usuarios' com nome e onboarded = true
+  const { error: userError } = await supabase
+    .from("usuarios")
+    .upsert({
+      id: user.id,
+      nome: nomeParaSalvar,
+      onboarded: true,
+    });
 
-    // Atualiza onboarded = true
-    const { error: userError } = await supabase
-      .from("usuarios")
-      .update({ onboarded: true })
-      .eq("id", user.id);
-
-    if (userError) {
-      alert("Erro ao atualizar status: " + userError.message);
-      return;
-    }
-
-    router.replace("/academia");
+  if (userError) {
+    alert("Erro ao atualizar usuário: " + userError.message);
+    return;
   }
+
+  // 2️⃣ Salva dados do onboarding
+  const { error: onboardingError } = await supabase
+    .from("usuarios_onboarding")
+    .upsert({
+      id: user.id,
+      tipo_conta: tipoConta,
+      objetivo,
+      funcoes_interesse: funcoesInteresse,
+      localizacao,
+    });
+
+  if (onboardingError) {
+    alert("Erro ao salvar onboarding: " + onboardingError.message);
+    return;
+  }
+
+  router.replace("/academia");
+}
+
 
   if (checkingAuth) return null;
 

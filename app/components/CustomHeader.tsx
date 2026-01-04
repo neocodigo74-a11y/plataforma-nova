@@ -99,33 +99,45 @@ export default function MobileHeader({ onToggleSidebar, sidebarOpen, onSelectCon
 
   // useEffect ATUALIZADO
   useEffect(() => {
-    const fetchUserData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  const fetchUserData = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (user) {
-        // Buscar dados da tabela usuarios
-        const { data, error } = await supabase
-          .from("usuarios")
-          .select("foto_perfil, nome")
-          .eq("id", user.id)
-          .single();
+    if (!user) return;
 
-        if (!error && data) setUserInfo(data);
+    // 1️⃣ Pegar nome e foto do Google Auth, se existir
+    let nome = user.user_metadata?.full_name || user.user_metadata?.name || "";
+    let foto = user.user_metadata?.avatar_url || null;
 
-        // BUSCAR CONTAGEM INICIAL
-        await updateUnreadMessages(user);
-        await updateUnreadNotifications(user);
+    // 2️⃣ Caso não exista, buscar na tabela usuarios
+    if (!nome || !foto) {
+      const { data, error } = await supabase
+        .from("usuarios")
+        .select("nome, foto_perfil")
+        .eq("id", user.id)
+        .single();
 
-        // Iniciar escuta em tempo real e obter a função de cleanup
-        const cleanup = subscribeRealtime(user);
-        return cleanup; // O useEffect retornará esta função de cleanup
+      if (!error && data) {
+        if (!nome) nome = data.nome;
+        if (!foto) foto = data.foto_perfil;
       }
-    };
+    }
 
-    fetchUserData();
-  }, []);
+    setUserInfo({ nome, foto_perfil: foto });
+
+    // Atualizar badges
+    await updateUnreadMessages(user);
+    await updateUnreadNotifications(user);
+
+    // Iniciar escuta em tempo real
+    const cleanup = subscribeRealtime(user);
+    return cleanup;
+  };
+
+  fetchUserData();
+}, []);
+
 
   const renderUserIcon = () => {
     if (userInfo?.foto_perfil) {
