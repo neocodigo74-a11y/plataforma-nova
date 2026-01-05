@@ -295,7 +295,7 @@ const router = useRouter();
       </div>
 
       {/* CONTEÚDO DAS TABS */}
-      <div className="mt-6 bg-white rounded-xl px-4 py-3 shadow-sm min-h-[160px]">
+          <div className="mt-6 bg-white rounded-xl border border-gray-200 p-4 px-4 py-3 m min-h-[160px]">
         <AnimatePresence initial={false} mode="wait">
           <motion.div key={activeTab} initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-10 }} transition={{ duration:0.25 }} className="space-y-3">
             

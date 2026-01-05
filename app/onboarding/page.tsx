@@ -206,7 +206,7 @@ const [nomeUsuario, setNomeUsuario] = useState("");
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {["Cientista de dados","Gerente de projetos de TI","Consultor de tecnologia","Engenheiro de aprendizado de máquina","Analista de Business Intelligence","Gerente de produtos","Analista de negócios/gerenciamento","Analista de dados","Desenvolvedor de Data Warehouse"]
+                  {["Cientista de dados","Gerente de projetos de TI","Consultor de tecnologia","Informática","Marketing Digital","Gerente de produtos","Designer Gráfico","Analista de dados","Desenvolvedor de Data Warehouse"]
                     .map(f => (
                       <MultiSelectCard 
                         key={f} 
@@ -229,7 +229,7 @@ const [nomeUsuario, setNomeUsuario] = useState("");
                 <h2 className="font-semibold">Onde você está localizado?</h2>
                 <div className="relative mt-4">
                   <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <input className="input pl-10" placeholder="Ex: São Paulo, Brasil" value={localizacao} onChange={(e)=>setLocalizacao(e.target.value)} />
+                  <input className="input pl-10" placeholder="Ex: Luanda, Angola" value={localizacao} onChange={(e)=>setLocalizacao(e.target.value)} />
                 </div>
                 <Footer onNext={next} onBack={back} nextDisabled={!localizacao} />
               </div>
@@ -239,7 +239,7 @@ const [nomeUsuario, setNomeUsuario] = useState("");
             {step === 6 && (
               <div className="text-center space-y-4">
                 <CheckCircle className="mx-auto text-green-500" size={48}/>
-                <h2 className="text-xl font-bold">Tudo pronto 🚀</h2>
+                <h2 className="text-xl font-bold">Tudo pronto </h2>
                 <p className="text-gray-600">Seu perfil está ativo. O NOVA começa agora.</p>
                 <button className="btn-primary" onClick={finishOnboarding}>Entrar na plataforma</button>
                 <button onClick={back} className="text-gray-600 block w-full mt-4">Voltar e Revisar</button>

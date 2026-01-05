@@ -29,6 +29,7 @@ import AuthorDashboardView from "./AuthorDashboardView";
 import NetworkingPage from "../components/Networking";
 import JobList from "./JobList";
 
+import Formalario from "./Formulario";
 
 
 interface Props {
@@ -95,6 +96,7 @@ const [usuarioLogadoId, setUsuarioLogadoId] = useState<string | null>(null);
     setActiveContent("DetalhesUsuario");
   }}
 />,
+Desafio: <Formalario />,
     Notificacoes: <Notificacoes />,
  DetalhesUsuario:
   usuarioDetalhesId && usuarioLogadoId ? (
@@ -181,7 +183,7 @@ Arquivos: usuarioLogadoId ? (
   onSelectContent={(key: string) => setActiveContent(key)}
 />
 
-      <DesktopHeader />
+      <DesktopHeader  onSelectContent={(key: string) => setActiveContent(key)} />
 
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 border-r border-zinc-200 bg-white z-10">
         <Sidebar onNavigate={handleNavigate} />
@@ -244,9 +246,7 @@ Arquivos: usuarioLogadoId ? (
 
       <BotaoFlutuante />
 
-      {/* PWA Install Banners */}
-      <PwaInstallAndroid />
-      <PwaInstallIOS />
+     
     </div>
   );
 }

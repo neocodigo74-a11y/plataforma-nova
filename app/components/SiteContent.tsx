@@ -15,6 +15,9 @@ import {
   UserPlus,
   Menu,
   X,
+  Rocket,
+  Cake,
+  Calendar,
 } from "lucide-react";
 
 export default function SiteContent() {
@@ -38,24 +41,23 @@ export default function SiteContent() {
       <header className="relative z-20">
         <nav className="flex items-center justify-between px-4 sm:px-8 py-4">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black">
-              <GraduationCap size={18} />
-            </div>
-            <div className="leading-tight">
-              <p className="font-bold text-sm tracking-wide">NOVA</p>
-              <span className="text-xs text-zinc-400">
-                Academia & Certificações
-              </span>
-            </div>
-          </div>
+               <Link href="/" className="flex items-center">
+  <img
+    src="/novaLogotipoBranco.png"      // caminho da imagem dentro da pasta public
+    alt="Logo NOVA"
+    width={69}           // largura do logo
+    height={69}          // altura do logo
+    className="mr-2"     // margem entre logo e texto, se quiser manter texto
+  />
+ 
+</Link>
 
           {/* Menu Desktop */}
           <ul className="hidden lg:flex items-center gap-6 text-sm font-medium text-zinc-300">
-            <NavItem icon={<Home size={16} />} href="#" label="Início" />
-            <NavItem icon={<BookOpen size={16} />} href="/Cursos" label="Cursos" />
-            <NavItem icon={<Layers size={16} />} href="/Certificacoes" label="Certificações" />
-            <NavItem icon={<Users size={16} />} href="#" label="Comunidade" />
+           <NavItem icon={<Home size={16} />} href="/" label="Início" onClick={() => setOpen(false)} />
+        
+            <NavItem icon={<Users size={16} />} href="/fundador" label="Fundador do NOVA" />
+     
             <NavItem icon={<Info size={16} />} href="/Sobre" label="Sobre" />
           </ul>
 
@@ -109,9 +111,8 @@ export default function SiteContent() {
 
               <div className="flex flex-col gap-5 text-zinc-300">
                 <MobileItem icon={<Home />} label="Início" />
-                <MobileItem icon={<BookOpen />} label="Cursos" href="/Cursos" />
-                <MobileItem icon={<Layers />} label="Certificações" href="/Certificacoes" />
-                <MobileItem icon={<Users />} label="Comunidade" />
+              
+                <MobileItem icon={<Users />} label="Fundador" href="/fundador"/>
                 <MobileItem icon={<Info />} label="Sobre" href="/Sobre" />
 
                 <div className="border-t border-white/10 pt-6 flex flex-col gap-3">
@@ -134,43 +135,97 @@ export default function SiteContent() {
       </AnimatePresence>
 
       {/* Hero */}
-      <main className="relative z-10 flex min-h-[80vh] flex-col items-center justify-center text-center px-4">
-        <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm text-zinc-300">
-          <GraduationCap size={14} />
-          Academia de Certificação Tecnológica
-        </span>
+      {/* Hero – Lançamento do NOVA */}
+<main className="relative z-10 flex min-h-[80vh] flex-col items-center justify-center text-center px-4">
+  <motion.span
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.1 }}
+    className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm text-zinc-300"
+  >
+    🎉 Aniversário do Fundador & Lançamento Oficial
+  </motion.span>
 
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4">
-          NOVA
-        </h1>
+  <motion.h1
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+    className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4"
+  >
+    NOVA
+  </motion.h1>
 
-        <h2 className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-6">
-          Aprenda. Certifique-se. Evolua.
-        </h2>
+  <motion.h2
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.3 }}
+    className="text-lg sm:text-xl md:text-2xl text-zinc-300 mb-6 max-w-3xl"
+  >
+    A Startup NOVA lança oficialmente o seu primeiro MVP Web ao público,
+    celebrando o aniversário do seu fundador <strong>Osvânio Silva</strong>.
+  </motion.h2>
 
-        <p className="max-w-xl text-zinc-400 mb-10">
-          Plataforma moderna de aprendizagem e certificações focada em tecnologia,
-          inovação e carreira profissional.
-        </p>
+  <motion.p
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.4 }}
+    className="max-w-2xl text-zinc-400 mb-10 leading-relaxed"
+  >
+    Criada em <strong>15 de Abril de 2025</strong>, a NOVA nasce com a missão de
+    conectar estudantes, startups, universidades, investigadores e empresas,
+    promovendo inovação, networking e oportunidades reais no ecossistema
+    tecnológico.
+  </motion.p>
 
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Link
-            href="/register"
-            className="flex justify-center gap-2 rounded-md bg-white px-8 py-3 font-semibold text-black"
-          >
-            <UserPlus size={18} />
-            Começar Agora
-          </Link>
+  {/* Destaques */}
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.5 }}
+    className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl w-full mb-10"
+  >
+    <Highlight
+      icon={<Cake size={18} />}
+      text="Fundador: Osvânio Silva"
+    />
+    <Highlight
+      icon={<Calendar size={18} />}
+      text="Fundação: 15.Abril.2025"
+    />
+    <Highlight
+      icon={<Rocket size={18} />}
+      text="Primeiro MVP Web Público"
+    />
+    <Highlight
+      icon={<Users size={18} />}
+      text="ANGOTIC 2025 • ELISAL • Outros eventos"
+    />
+  </motion.div>
 
-          <Link
-            href="/courses"
-            className="flex justify-center gap-2 rounded-md border border-white/20 px-8 py-3 font-semibold"
-          >
-            <BookOpen size={18} />
-            Ver Cursos
-          </Link>
-        </div>
-      </main>
+  {/* CTA opcional */}
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ delay: 0.6 }}
+    className="flex flex-col sm:flex-row gap-4"
+  >
+    <Link
+      href="/register"
+      className="flex items-center justify-center gap-2 rounded-md bg-white px-8 py-3 font-semibold text-black"
+    >
+      <Rocket size={18} />
+      Explorar o NOVA
+    </Link>
+
+    <Link
+      href="/Sobre"
+      className="flex items-center justify-center gap-2 rounded-md border border-white/20 px-8 py-3 font-semibold"
+    >
+      Saber Mais
+    </Link>
+  </motion.div>
+</main>
+
     </div>
   );
 }
@@ -193,3 +248,18 @@ function MobileItem({ icon, label, href = "#" }: any) {
     </Link>
   );
 }
+function Highlight({
+  icon,
+  text,
+}: {
+  icon: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300 backdrop-blur">
+      <span className="text-white">{icon}</span>
+      {text}
+    </div>
+  );
+}
+

@@ -243,11 +243,16 @@ export default function Sidebar({
 
       {/* MENU */}
       <div className="mt-2 px-2 flex flex-col gap-0.5">
-        <SidebarItem icon={<LayoutDashboard size={13} />} label="Cursos" active  onClick={() => onNavigate("Home")} />
+        <SidebarItem icon={<LayoutDashboard size={13} />} label="Inicio" active  onClick={() => onNavigate("Home")} />
      <SidebarItem
   icon={<Users size={13} />}
   label="Comunidade"
   onClick={() => onNavigate("Comunidade")}
+/>
+     <SidebarItem
+  icon={<LayoutDashboard size={13} />}
+  label="Formularios"
+  onClick={() => onNavigate("Desafio")}
 />
 <div className="relative">
   <SidebarItem
@@ -286,7 +291,7 @@ export default function Sidebar({
         <SidebarItem icon={<GraduationCap size={13} />} label="Meus Aprendizados"     onClick={() => onNavigate("Aprendizados")}/>
         <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" />
         <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos" onClick={() => onNavigate("Arquivos")}   />
-        <SidebarItem icon={<Briefcase size={13} />} label="Freelancer rojetos" />
+ 
         <SidebarItem icon={<Cog size={16} />} label="Configuração do sistema" />
       </div>
 
