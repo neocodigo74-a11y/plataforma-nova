@@ -247,7 +247,7 @@ export default function Sidebar({
      <SidebarItem
   icon={<Users size={13} />}
   label="Comunidade"
-  onClick={() => onNavigate("Comunidade")}
+ 
 />
      <SidebarItem
   icon={<LayoutDashboard size={13} />}
