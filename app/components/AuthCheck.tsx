@@ -52,7 +52,7 @@ export default function AuthCheck() {
           loop={false} // 🔹 remove o loop
           autoplay
           className="w-76 h-76"
-          speed={0.5} // 🔥 desacelera a animação
+        
         />
        
       </div>
