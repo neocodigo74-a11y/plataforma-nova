@@ -246,7 +246,9 @@ Arquivos: usuarioLogadoId ? (
 
       <BotaoFlutuante />
 
-     
+      {/* PWA Install Banners */}
+      <PwaInstallAndroid />
+      <PwaInstallIOS />
     </div>
   );
 }

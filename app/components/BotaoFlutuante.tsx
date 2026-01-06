@@ -18,7 +18,7 @@ export default function BotaoFlutuante() {
       color: "bg-black",
       onClick: () => {
         alternarMenu();
-        router.push("/meuPortfolio");
+       router.push("/meu-perfil");
       },
     },
     {

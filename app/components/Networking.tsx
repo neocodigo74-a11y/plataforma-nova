@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DetalhesUsuario from "../components/DetalhesUsuario";
+import { useRouter } from "next/navigation";
 
 /* ===================== TYPES ===================== */
 interface Usuario {
@@ -61,6 +62,7 @@ export default function Networking({ onSelectUser }: Props) {
     useState<"sugestoes" | "networking">("sugestoes");
   const [busca, setBusca] = useState("");
   const buscaDebounced = useDebounce(busca, 500);
+  const router = useRouter();
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<string | null>(
     null
   );
@@ -319,7 +321,7 @@ export default function Networking({ onSelectUser }: Props) {
 
             <div className="flex-1">
               <p
-                onClick={() => setUsuarioSelecionado(item.id)}
+               onClick={() => router.push(`/perfil/${item.id}`)}
                 className="font-semibold cursor-pointer"
               >
                 {item.nome}{" "}

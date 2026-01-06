@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import Lottie from "lottie-react";
 
 import SiteContent from "./SiteContent";
 import AppContent from "./AppContent";
@@ -11,34 +12,52 @@ export default function AuthCheck() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Função para buscar a sessão atual
+    let isMounted = true;
+
     const fetchUser = async () => {
+      const start = Date.now();
+
       const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+      const elapsed = Date.now() - start;
+
+      const MIN_TIME = 1000; // 1 segundo mínimo só para mostrar a logo
+      const remaining = Math.max(0, MIN_TIME - elapsed);
+
+      setTimeout(() => {
+        if (!isMounted) return;
+        setUser(data.session?.user ?? null);
+        setLoading(false);
+      }, remaining);
     };
 
     fetchUser();
 
-    // Inscrever para mudanças na autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  // Enquanto carrega a sessão
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-zinc-950 text-white">
-        Carregando...
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-zinc-950 text-white">
+        <Lottie
+          animationData={require("/public/nova.json")} // 🔹 usar animationData em vez de path
+          loop={false} // 🔹 remove o loop
+          autoplay
+          className="w-76 h-76"
+          speed={0.5} // 🔥 desacelera a animação
+        />
+       
       </div>
     );
   }
 
-  // Exibir conteúdo baseado no usuário autenticado
   return user ? <AppContent /> : <SiteContent />;
 }
