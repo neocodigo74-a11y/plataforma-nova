@@ -8,6 +8,9 @@ export default function MeuPerfilPage() {
   const [perfil, setPerfil] = useState<any>(null);
   const [cursos, setCursos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+const [idiomas, setIdiomas] = useState<any[]>([]);
+const [interessesHobbies, setInteressesHobbies] = useState<string[]>([]);
+const [habilidades, setHabilidades] = useState<any[]>([]);
 
   useEffect(() => {
     carregarDadosIniciais();
@@ -48,6 +51,31 @@ export default function MeuPerfilPage() {
       if (c.status === "aprovado") networking++;
     });
 
+        // 4. Carregar Idiomas do usuário
+const { data: idiomas } = await supabase
+  .from("idiomas")
+  .select("*")
+  .eq("usuario_id", user.id);
+ setIdiomas(idiomas || []);
+  // 5. Interesses & Hobbies
+const { data: interesses } = await supabase
+  .from("usuarios_interesses")
+  .select("interesse")  // se a coluna se chama "interesse"
+  .eq("usuario_id", user.id);
+
+setInteressesHobbies(interesses?.map(i => i.interesse) || []);
+
+ 
+// 6. Carregar Habilidades
+const { data: habilidades } = await supabase
+  .from("habilidades")
+  .select("*")
+  .eq("usuario_id", user.id);
+
+setHabilidades(habilidades || []);
+
+
+
     setPerfil({
       ...usuario,
       seguindo,
@@ -76,6 +104,9 @@ export default function MeuPerfilPage() {
       cursosInscritos={cursos}
       cursosConcluidos={cursos.filter(c => c.concluido)}
       loadingCursos={loading}
+       idiomas={idiomas}
+    interessesHobbies={interessesHobbies}
+    habilidades={habilidades} 
       isOwner={true} // Aqui é TRUE porque esta é a "Minha Página"
       onUpdatePerfil={(updated) => setPerfil(updated)}
     />

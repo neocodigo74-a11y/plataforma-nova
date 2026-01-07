@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import Lottie from "lottie-react";
+import Lottie, { LottieRefCurrentProps } from "lottie-react";
 
 import SiteContent from "./SiteContent";
 import AppContent from "./AppContent";
@@ -10,6 +10,11 @@ import AppContent from "./AppContent";
 export default function AuthCheck() {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const lottieRef = useRef<LottieRefCurrentProps>(null);
+
+useEffect(() => {
+  lottieRef.current?.setSpeed(0.5);
+}, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,8 +56,8 @@ export default function AuthCheck() {
           animationData={require("/public/nova.json")} // 🔹 usar animationData em vez de path
           loop={false} // 🔹 remove o loop
           autoplay
-          className="w-76 h-76"
-        
+          className="w-56 h-56"
+         
         />
        
       </div>

@@ -43,6 +43,19 @@ export default function PerfilPublicoPage({ params }: { params: Promise<{ id: st
         .select("objetivo, funcoes_interesse")
         .eq("id", idDaURL)
         .single();
+// 2.1 Carregar Idiomas
+const { data: idiomas } = await supabase
+  .from("idiomas")
+  .select("id, nome, nivel")
+  .eq("usuario_id", idDaURL);
+
+  // 2.2 Carregar Interesses & Hobbies
+const { data: interesses } = await supabase
+  .from("usuarios_interesses")
+  .select("interesse") // confere o nome da coluna na tua tabela
+  .eq("usuario_id", idDaURL);
+
+const interessesHobbies = interesses?.map(i => i.interesse) || [];
 
       // 3. Carregar Conexões e Calcular Stats
       const { data: conexoes } = await supabase
@@ -72,6 +85,8 @@ export default function PerfilPublicoPage({ params }: { params: Promise<{ id: st
         criador: usuario?.email === "osvaniosilva74@gmail.com",
         objetivo: onboarding?.objetivo,
         funcoes_interesse: onboarding?.funcoes_interesse || [],
+         idiomas: idiomas || [],
+         interessesHobbies,
         seguindo,
         seguidores,
         networking,
@@ -120,6 +135,8 @@ export default function PerfilPublicoPage({ params }: { params: Promise<{ id: st
       cursosInscritos={cursos.inscritos}
       cursosConcluidos={cursos.concluidos}
       loadingCursos={cursos.loading}
+      idiomas={perfil.idiomas}
+      interessesHobbies={perfil.interessesHobbies}
       isOwner={usuarioLogadoId === idDaURL} // Se eu visitar meu próprio link, vira "Owner"
       onUpdatePerfil={(updated) => setPerfil(updated)}
       // Props extras para o sistema de conexão que seu Layout pode usar:

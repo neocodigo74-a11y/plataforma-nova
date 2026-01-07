@@ -25,6 +25,7 @@ import {
   User2,
   Briefcase,
   Cog,
+  Form,
 } from "lucide-react";
 
 type UserInfo = {
@@ -206,7 +207,7 @@ export default function Sidebar({
           {openProfileMenu && (
             <div className="absolute top-7 left-6 w-36 bg-white border border-zinc-200 rounded-md shadow-lg z-50">
               <button
-                onClick={() => onNavigate("Perfil")}
+                
                 className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-zinc-700 "
               >
                 <User2 size={14} />
@@ -250,7 +251,7 @@ export default function Sidebar({
   onClick={() => onNavigate("Comunidade")}
 />
      <SidebarItem
-  icon={<LayoutDashboard size={13} />}
+  icon={<Form size={13} />}
   label="Formularios"
   onClick={() => onNavigate("Desafio")}
 />

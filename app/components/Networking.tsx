@@ -23,6 +23,7 @@ interface Usuario {
   tipo: string;
   bio?: string;
   foto_perfil?: string;
+    foto_google?: string;
   verificado?: boolean;
   premium?: boolean;
 }
@@ -119,6 +120,7 @@ export default function Networking({ onSelectUser }: Props) {
         "Universidade",
         "Investidor",
         "Estudante",
+       "usuario"
       ])
       .neq("id", usuarioId)
       .order("created_at", { ascending: false });
