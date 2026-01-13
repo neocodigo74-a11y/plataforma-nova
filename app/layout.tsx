@@ -4,7 +4,7 @@ export const metadata = {
   title: "NOVA",
   description: "Plataforma NOVA",
   manifest: "/manifest.json",
-  themeColor: "#E11D48",
+  themeColor: "#ffffffff",
 };
 
 export default function RootLayout({
@@ -15,6 +15,10 @@ export default function RootLayout({
   return (
     <html lang="pt">
       <head>
+        {/* Manifest e cores */}
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#ffffffff" />
+
         {/* iOS */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
@@ -22,9 +26,14 @@ export default function RootLayout({
           content="black-translucent"
         />
         <meta name="apple-mobile-web-app-title" content="NOVA" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon.png" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+
+        {/* Botão PWA fixo no canto inferior direito */}
+        <div id="pwa-install-button-container" />
+      </body>
     </html>
   );
 }

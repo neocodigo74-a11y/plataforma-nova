@@ -1,249 +1,143 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Briefcase,
-  FileText,
-  Users,
-  HelpCircle,
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-  Tag,
-  Calendar,
-  Upload,
-  Clock,
-} from "lucide-react";
-
-import { useForm, Controller } from "react-hook-form";
+import { CheckCircle, Image as ImageIcon, X, Loader2, PartyPopper } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-
 import { supabase } from "@/lib/supabase";
 
 /* =====================================================
-   TIPOS
+    SCHEMA
 ===================================================== */
-type PostType = "artigo" | "freelancer" | "parceria" | "vaga" | "ajuda";
-
-/* =====================================================
-   SCHEMA ÚNICO (ZOD)
-===================================================== */
-const formSchema = z
-  .object({
-    postType: z.enum(["artigo", "freelancer", "parceria", "vaga", "ajuda"]),
-    titulo: z.string().min(3, "Título obrigatório"),
-    descricao: z.string().min(5, "Descrição obrigatória"),
-
-    publicarEm: z.enum(["agora", "agendar"]),
-    dataAgendada: z.date().optional(),
-
-    arquivos: z.array(z.instanceof(File)).optional(),
-    tags: z.array(z.string()).optional(),
-
-    area: z.string().optional(),
-    prazo: z.date().optional(),
-
-    experiencia: z.string().optional(),
-    local: z.string().optional(),
-    salario: z.string().optional(),
-
-    urgencia: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.publicarEm === "agendar" && !data.dataAgendada) {
-      ctx.addIssue({
-        path: ["dataAgendada"],
-        message: "Data obrigatória",
-        code: z.ZodIssueCode.custom,
-      });
-    }
-
-    if (data.postType === "artigo" && (!data.tags || data.tags.length === 0)) {
-      ctx.addIssue({
-        path: ["tags"],
-        message: "Informe ao menos uma tag",
-        code: z.ZodIssueCode.custom,
-      });
-    }
-
-    if (["freelancer", "parceria"].includes(data.postType)) {
-      if (!data.area)
-        ctx.addIssue({ path: ["area"], message: "Área obrigatória", code: "custom" });
-      if (!data.prazo)
-        ctx.addIssue({ path: ["prazo"], message: "Prazo obrigatório", code: "custom" });
-    }
-
-    if (data.postType === "vaga") {
-      if (!data.area)
-        ctx.addIssue({ path: ["area"], message: "Área obrigatória", code: "custom" });
-      if (!data.experiencia)
-        ctx.addIssue({ path: ["experiencia"], message: "Experiência obrigatória", code: "custom" });
-      if (!data.local)
-        ctx.addIssue({ path: ["local"], message: "Local obrigatório", code: "custom" });
-    }
-
-    if (data.postType === "ajuda" && !data.urgencia) {
-      ctx.addIssue({
-        path: ["urgencia"],
-        message: "Informe a urgência",
-        code: "custom",
-      });
-    }
-  });
+const formSchema = z.object({
+  conteudo: z.string().min(1, "Escreva algo para publicar"),
+  arquivos: z.any().optional(),
+});
 
 type FormData = z.infer<typeof formSchema>;
 
-/* =====================================================
-   COMPONENTE
-===================================================== */
-export default function CreatePostWizard() {
-  const [step, setStep] = useState(1);
-  const [tagInput, setTagInput] = useState("");
+export default function CreatePost() {
+  const [loading, setLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // Estado do Modal
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    watch,
-    trigger,
-    getValues,
-    formState: { errors },
-  } = useForm<FormData>({
+  const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      publicarEm: "agora",
-      tags: [],
-      arquivos: [],
-    },
-    mode: "onBlur",
   });
 
-  const postType = watch("postType");
-  const publicarEm = watch("publicarEm");
-  const tags = watch("tags") ?? [];
-
-  /* =====================================================
-     NAVEGAÇÃO
-  ===================================================== */
-  const next = async (fields?: (keyof FormData)[]) => {
-    if (fields) {
-      const valid = await trigger(fields);
-      if (!valid) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setValue("arquivos", [file]);
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviewUrl(reader.result as string);
+      reader.readAsDataURL(file);
     }
-    setStep((s) => s + 1);
   };
 
-  /* =====================================================
-     SUBMIT
-  ===================================================== */
   const onSubmit = async (data: FormData) => {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return alert("Usuário não autenticado");
+    try {
+      setLoading(true);
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
 
-    const arquivosUrls: string[] = [];
+      let publicUrl = "";
 
-    if (data.arquivos?.length) {
-      for (const file of data.arquivos) {
-        const path = `${auth.user.id}/${Date.now()}-${file.name}`;
-
-        const { error } = await supabase.storage
-          .from("posts")
-          .upload(path, file);
-
-        if (!error) {
-          const { data } = supabase.storage.from("posts").getPublicUrl(path);
-          arquivosUrls.push(data.publicUrl);
-        }
+      if (data.arquivos && data.arquivos.length > 0) {
+        const file = data.arquivos[0];
+        const path = `${userData.user.id}/${Date.now()}-${Math.random()}.${file.name.split('.').pop()}`;
+        const { error: uploadError } = await supabase.storage.from("posts").upload(path, file);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from("posts").getPublicUrl(path);
+        publicUrl = urlData.publicUrl;
       }
-    }
 
-    const { error } = await supabase.from("posts").insert({
-      usuario_id: auth.user.id,
-      tipo: data.postType,
-      titulo: data.titulo,
-      descricao: data.descricao,
-      tags: data.tags ?? [],
-      area: data.area ?? null,
-      prazo: data.prazo ?? null,
-      experiencia: data.experiencia ?? null,
-      local: data.local ?? null,
-      salario: data.salario ?? null,
-      urgencia: data.urgencia ?? null,
-      arquivos: arquivosUrls,
-      publicar_em: data.publicarEm,
-      data_agendada: data.dataAgendada ?? null,
-    });
+      const { error: insertError } = await supabase.from("posts").insert({
+        usuario_id: userData.user.id,
+        conteudo: data.conteudo,
+        imagem: publicUrl,
+      });
 
-    if (error) {
+      if (insertError) throw insertError;
+
+      // SUCESSO: Abrir Modal e Resetar Form
+      reset();
+      setPreviewUrl(null);
+      setShowSuccessModal(true);
+
+    } catch (error: any) {
       console.error(error);
-      alert("Erro ao publicar");
-    } else {
-      alert("Post publicado com sucesso!");
+      // Aqui você poderia criar um modal de erro similar
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* =====================================================
-     RENDER
-  ===================================================== */
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow space-y-6"
-    >
-      <input type="hidden" {...register("postType")} />
-
-      {/* PASSO 1 */}
-      {step === 1 && (
-        <>
-          <h2 className="text-xl font-bold">Tipo de Post</h2>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { id: "artigo", label: "Artigo", icon: FileText },
-              { id: "freelancer", label: "Freelancer", icon: Briefcase },
-              { id: "parceria", label: "Parceria", icon: Users },
-              { id: "vaga", label: "Vaga", icon: Briefcase },
-              { id: "ajuda", label: "Ajuda", icon: HelpCircle },
-            ].map((t) => (
+    <div className="max-w-xl mx-auto p-4 relative">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden"
+      >
+        <div className="p-4 space-y-4">
+<textarea
+    {...register("conteudo")}
+    placeholder="O que você quer compartilhar?"
+    className="w-full px-4 py-3 text-zinc-800 placeholder-zinc-400 border border-black/[0.08]  bg-transparent rounded-xl resize-none h-24 text-base transition-all"
+  />
+          
+          {previewUrl && (
+            <div className="relative rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50">
+              <img src={previewUrl} alt="Preview" className="w-full max-h-[300px] object-contain" />
               <button
                 type="button"
-                key={t.id}
-                onClick={() => {
-                  setValue("postType", t.id as PostType);
-                  setStep(2);
-                }}
-                className="border rounded-xl p-4 flex gap-3 items-center hover:border-blue-600"
+                onClick={() => { setPreviewUrl(null); setValue("arquivos", []); }}
+                className="absolute top-2 right-2 bg-black/60 text-white p-1.5 rounded-full"
               >
-                <t.icon className="w-5 h-5 text-blue-600" />
-                {t.label}
+                <X size={16} />
               </button>
-            ))}
-          </div>
-        </>
-      )}
+            </div>
+          )}
+        </div>
 
-      {/* PASSO 2 */}
-      {step === 2 && (
-        <>
-          <input {...register("titulo")} placeholder="Título" className="input" />
-          <textarea {...register("descricao")} placeholder="Descrição" className="input h-28" />
+        <div className="px-4 py-3 bg-zinc-50/50 border-t border-zinc-100 flex items-center justify-between">
+          <label className="flex items-center gap-2 text-zinc-500 hover:text-blue-600 cursor-pointer transition">
+            <ImageIcon size={20} />
+            <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+          </label>
 
-          <button type="button" onClick={() => next(["titulo", "descricao"])}>Próximo</button>
-        </>
-      )}
-
-      {/* PASSO FINAL */}
-      {step >= 3 && (
-        <>
-          <button type="submit" className="bg-green-600 text-white px-6 py-3 rounded-xl">
-            <CheckCircle className="inline w-5 h-5 mr-2" />
-            Publicar
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+            {loading ? "Publicando..." : "Publicar"}
           </button>
-        </>
+        </div>
+      </form>
+
+      {/* MODAL DE SUCESSO OVERLAY */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform animate-in zoom-in-95 duration-300 flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+              <PartyPopper size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-zinc-900">Publicado com sucesso!</h3>
+            <p className="text-zinc-500 mt-2 text-sm">
+              Sua nova publicação já está disponível noa NOVA.
+            </p>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="mt-6 w-full bg-zinc-900 text-white py-3 rounded-xl font-bold hover:bg-zinc-800 transition"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
       )}
-    </form>
+    </div>
   );
 }

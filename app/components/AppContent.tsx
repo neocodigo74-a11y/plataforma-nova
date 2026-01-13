@@ -24,11 +24,11 @@ import Notificacoes from "../Notificacoes/page";
 import DetalhesUsuario from "../components/DetalhesUsuario";
 import MessagesPage from "./MessagesPage";
 import Footer from "./Footer";
-import PostManagerList from "../post/page";
+
 import AuthorDashboardView from "./AuthorDashboardView";
 import NetworkingPage from "../components/Networking";
 import JobList from "./JobList";
-
+import ListPost from "./postList";
 import Formalario from "./Formulario";
 
 
@@ -110,7 +110,8 @@ Desafio: <Formalario />,
     />
   ) : null,
 Mensagens: <MessagesPage />,
-Comunidade: <PostManagerList />,
+Comunidade: <ListPost />,
+
 Arquivos: usuarioLogadoId ? (
   <AuthorDashboardView currentUserId={usuarioLogadoId} />
 ) : (

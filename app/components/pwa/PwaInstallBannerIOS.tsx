@@ -1,74 +1,63 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Share2, PlusSquare, X } from "lucide-react";
+import { X, ArrowUp, Share } from "lucide-react";
 
 export default function PwaInstallBannerIOS() {
   const [visible, setVisible] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    const isIOS =
-      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-      !(window as any).MSStream;
-
-    const isSafari =
-      /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-    const isStandalone =
-      (window.navigator as any).standalone === true;
-
+    // 1. Verifica se é iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    // 2. Verifica se NÃO está em modo standalone (ou seja, está no navegador)
+    const isStandalone = (window.navigator as any).standalone === true;
+    
+    // 3. Verifica se o usuário já fechou hoje
     const dismissed = localStorage.getItem("nova-ios-install-dismissed");
 
-    if (isIOS && isSafari && !isStandalone && !dismissed) {
+    if (isIOS && !isStandalone && !dismissed) {
       setVisible(true);
+      setTimeout(() => setShowBanner(true), 400);
     }
   }, []);
 
   const closeBanner = () => {
     localStorage.setItem("nova-ios-install-dismissed", "true");
-    setVisible(false);
+    setShowBanner(false);
+    setTimeout(() => setVisible(false), 300);
   };
 
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-50 w-[94%] max-w-md -translate-x-1/2">
-      <div className="rounded-2xl bg-nova-dark border border-white/10 p-4 shadow-nova">
-        <div className="flex items-start gap-3">
-          {/* Icon */}
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-nova-red text-white">
-            <Share2 size={20} />
+    <div className="fixed bottom-6 left-1/2 z-[100] w-[90%] max-w-sm -translate-x-1/2">
+      <div
+        className={`rounded-2xl bg-white p-4 shadow-[0_0_40px_rgba(0,0,0,0.2)] border border-zinc-100 transform transition-all duration-500 ${
+          showBanner ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+        }`}
+      >
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <ArrowUp size={20} className="animate-bounce" />
           </div>
+          
+          <h3 className="text-sm font-bold text-zinc-900">Adicionar à Tela de Início</h3>
+          <p className="mt-1 text-[12px] text-zinc-500">
+            Clique no ícone de <span className="font-bold inline-flex items-center gap-0.5">compartilhar <Share size={12}/></span> abaixo e depois em <strong>"Adicionar à Tela de Início"</strong>.
+          </p>
 
-          {/* Text */}
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white">
-              Adicionar o NOVA
-            </h3>
-
-            <p className="mt-1 text-xs text-nova-muted">
-              Para instalar o NOVA no seu iPhone:
-            </p>
-
-            <ol className="mt-2 space-y-1 text-xs text-white/90">
-              <li className="flex items-center gap-2">
-                <Share2 size={14} /> Toque em <b>Partilhar</b>
-              </li>
-              <li className="flex items-center gap-2">
-                <PlusSquare size={14} /> Escolha <b>Adicionar à Tela de Início</b>
-              </li>
-            </ol>
-          </div>
-
-          {/* Close */}
-          <button
+          <button 
             onClick={closeBanner}
-            className="text-white/50 hover:text-white"
+            className="mt-4 w-full py-2 text-xs font-medium text-zinc-400 border-t border-zinc-50"
           >
-            <X size={18} />
+            Fechar
           </button>
         </div>
       </div>
+      {/* Setinha apontando para o botão de compartilhar do Safari */}
+      <div className="mx-auto mt-[-1px] h-3 w-3 rotate-45 bg-white border-r border-b border-zinc-100"></div>
     </div>
   );
 }

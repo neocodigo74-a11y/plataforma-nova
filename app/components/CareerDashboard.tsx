@@ -1,32 +1,32 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Brain, Rocket, Clock, ChevronRight, BookOpen, Loader2, CheckCircle2 } from "lucide-react";
+// Icones: Mantive apenas os que são relevantes para cursos e a estrutura geral
+import { Rocket, Clock, ChevronRight, BookOpen, Loader2, CheckCircle2 } from "lucide-react"; 
 
-// Tipagem para cursos e microaprendizados
-interface Inscricao {
+// Tipagem para Cursos (simplificada)
+interface CursoInscrito {
   id: number;
   titulo: string;
-  tipo: "curso" | "micro";
-  total_aulas?: number; // apenas cursos
-  aulas_concluidas?: number; // apenas cursos
-  duracao_min?: number; // apenas micro
-  perguntas_count?: number; // apenas micro
+  tipo: "curso"; // Fixado em "curso"
+  total_aulas: number;
+  aulas_concluidas: number;
   concluido: boolean;
 }
 
 interface CareerDashboardProps {
-  onCourseSelect: (curso: Inscricao) => void;
+  // O tipo de onCourseSelect mudou para refletir apenas CursoInscrito
+  onCourseSelect: (curso: CursoInscrito) => void; 
 }
 
-export default function DashboardClone({ onCourseSelect }: CareerDashboardProps) {
+// O nome do componente pode ser ajustado para refletir o foco, como DashboardCursos
+export default function DashboardCursos({ onCourseSelect }: CareerDashboardProps) { 
   const [userName, setUserName] = useState("");
   const [objetivo, setObjetivo] = useState("");
   const [funcoesInteresse, setFuncoesInteresse] = useState<string[]>([]);
   const [greeting, setGreeting] = useState("");
 
-  const [cursosInscritos, setCursosInscritos] = useState<Inscricao[]>([]);
+  // Usando a nova tipagem: apenas cursos
+  const [cursosInscritos, setCursosInscritos] = useState<CursoInscrito[]>([]); 
   const [loadingCursos, setLoadingCursos] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState<"andamento" | "concluido">("andamento");
 
@@ -40,8 +40,14 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
   }, []);
 
   const fetchUserData = async () => {
+    // A remoção de "use client" pode requerer ajustes no ambiente de execução.
+    // Assumindo que o `supabase` está configurado para o escopo onde este componente será executado.
+    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoadingCursos(false); // Garantir que o loading seja falso se não houver usuário
+      return;
+    }
 
     // 1. Buscar Nome e Onboarding
     const { data: usuario } = await supabase.from("usuarios").select("nome").eq("id", user.id).single();
@@ -51,46 +57,36 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
     if (onboarding?.objetivo) setObjetivo(onboarding.objetivo);
     if (onboarding?.funcoes_interesse) setFuncoesInteresse(onboarding.funcoes_interesse);
 
-    // 2. BUSCAR CURSOS PELA VIEW
+    // 2. BUSCAR APENAS CURSOS PELA VIEW
     const { data: inscricoesCursos } = await supabase
       .from("dashboard_cursos_progresso")
       .select("*")
       .eq("usuario_id", user.id)
       .order("data_inscricao", { ascending: false });
 
-    // 3. BUSCAR MICROAPRENDIZADOS
-    const { data: inscricoesMicro } = await supabase
-      .from("dashboard_micro_progresso")
-      .select("*")
-      .eq("usuario_id", user.id)
-      .order("data_inscricao", { ascending: false });
+    // Remoção da busca por microaprendizados
 
-    const todos: Inscricao[] = [];
+    const todos: CursoInscrito[] = [];
 
-    // Processar cursos
+    // Processar apenas cursos
     inscricoesCursos?.forEach(c => {
+      // Cálculo de conclusão: 
+      // Se total_aulas > 0, verifica se aulas_concluidas é >= total_aulas.
+      // Se total_aulas é 0 (e.g., curso recém-criado sem aulas), não marca como concluído.
+      const concluido = c.total_aulas > 0 && c.aulas_concluidas >= c.total_aulas;
+      
       todos.push({
         id: c.curso_id,
         titulo: c.curso_titulo,
-        tipo: "curso",
-        total_aulas: c.total_aulas,
-        aulas_concluidas: c.aulas_concluidas,
-        concluido: c.total_aulas > 0 && c.aulas_concluidas >= c.total_aulas,
+        tipo: "curso", // Tipo fixado
+        total_aulas: c.total_aulas || 0, // Garantir valor numérico
+        aulas_concluidas: c.aulas_concluidas || 0, // Garantir valor numérico
+        concluido: concluido,
       });
     });
 
-    // Processar microaprendizados
-    inscricoesMicro?.forEach(m => {
-      todos.push({
-        id: m.micro_id,
-        titulo: m.micro_titulo,
-        tipo: "micro",
-        duracao_min: m.duracao_min,
-        perguntas_count: m.perguntas_count,
-        concluido: m.perc_concluido >= 100, // ou outro campo da view
-      });
-    });
-
+    // Remoção do processamento de microaprendizados
+    
     setCursosInscritos(todos);
     setLoadingCursos(false);
   };
@@ -99,6 +95,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
   const cursosConcluidos = cursosInscritos.filter(c => c.concluido);
   const cursosExibidos = abaAtiva === "andamento" ? cursosAndamento : cursosConcluidos;
 
+  // Mapeamento de texto do objetivo (mantido, pois é parte do header)
   const objetivoTextoMap: Record<string, string> = {
     iniciar_carreira: "iniciar minha carreira",
     mudar_carreira: "mudar função para",
@@ -159,7 +156,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
           </div>
         </div>
 
-        {/* ÁREA CENTRAL - LISTA DE CURSOS + MICRO */}
+        {/* ÁREA CENTRAL - LISTA DE CURSOS */}
         <div className="flex flex-col">
           <div className="flex gap-6 border-b border-gray-100 mb-6">
             <button 
@@ -181,11 +178,10 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
           ) : cursosExibidos.length > 0 ? (
             <div className="grid gap-4">
               {cursosExibidos.map((curso) => {
-                const percentual = curso.tipo === "curso" && curso.total_aulas
-                  ? Math.round((curso.aulas_concluidas! / curso.total_aulas) * 100)
-                  : curso.tipo === "micro" && curso.duracao_min
-                  ? Math.round((curso.perguntas_count! / curso.duracao_min) * 100)
-                  : 0;
+                // Cálculo de percentual simplificado, usando apenas dados de curso
+                const percentual = curso.total_aulas > 0
+                  ? Math.round((curso.aulas_concluidas / curso.total_aulas) * 100)
+                  : 0; 
 
                 return (
                   <div key={curso.id} className="group flex flex-col md:flex-row items-center justify-between p-5 border border-gray-100 rounded-xl hover:shadow-md transition bg-white hover:border-blue-100">
@@ -199,8 +195,7 @@ export default function DashboardClone({ onCourseSelect }: CareerDashboardProps)
                           <div className="mt-2 w-full max-w-[250px]">
                             <div className="flex justify-between text-[10px] font-bold text-gray-400 mb-1 uppercase">
                               <span>
-                                {curso.tipo === "curso" ? `${curso.aulas_concluidas}/${curso.total_aulas} Aulas` 
-                                : `${curso.perguntas_count}/${curso.duracao_min} min`}
+                                {curso.aulas_concluidas}/{curso.total_aulas} Aulas
                               </span>
                               <span>{percentual}%</span>
                             </div>
