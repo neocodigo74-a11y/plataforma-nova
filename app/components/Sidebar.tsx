@@ -293,7 +293,9 @@ export default function Sidebar({
         <SidebarItem icon={<LayoutDashboard size={13} />} label="Desafios iniciados" />
         <SidebarItem icon={<Folder size={13} />} label="Meus Arquivos" onClick={() => onNavigate("Arquivos")}   />
  
-        <SidebarItem icon={<Cog size={16} />} label="Configuração do sistema" />
+        <SidebarItem icon={<Cog size={16} /> }  label="Configuração do sistema" 
+        onClick={() => onNavigate("Difinicao")}
+        />
       </div>
 
       <hr className="my-3 mx-3 border-t border-zinc-200" /> 

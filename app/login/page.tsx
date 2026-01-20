@@ -74,7 +74,7 @@ export default function Login() {
           <Image
             src="/nova.svg" // ajusta o caminho do logo
             alt="VestiLink"
-            width={160}
+            width={120}
             height={40}
           />
         </div>

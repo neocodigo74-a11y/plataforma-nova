@@ -20,6 +20,7 @@ import EditPerfilModal from "../EditPerfilModal";
 import { useRouter } from "next/navigation";
 import AddIdiomaModal from "../AddIdiomaModal";
 import AddInteresseModal from "../AddInteresseModal";
+import CurriculoModal from "../curriculo/CurriculoModal";
 
 
 /* =======================
@@ -134,6 +135,8 @@ export default function ProfileLayout({
   const isCriador = perfil?.email === "osvaniosilva74@gmail.com";
  const [showAddInteresseModal, setShowAddInteresseModal] = useState(false);
 const interessesHobbiesState = interessesHobbies || [];
+const [showCurriculoModal, setShowCurriculoModal] = useState(false);
+
 
 
 
@@ -235,6 +238,7 @@ const interessesHobbiesState = interessesHobbies || [];
 
         {/* Botão de ação */}
         <div className="flex gap-2">
+          
           {isOwner ? (
             <button
               onClick={() => setShowEditModal(true)}
@@ -242,7 +246,8 @@ const interessesHobbiesState = interessesHobbies || [];
             >
               Editar
             </button>
-          ) : !conexao ? (
+          )
+           : !conexao ? (
             <button
               onClick={onConectar}
               className="bg-black text-white rounded-lg py-1 px-3 text-sm font-medium flex items-center gap-1 hover:bg-gray-800 transition"
@@ -286,6 +291,15 @@ const interessesHobbiesState = interessesHobbies || [];
 
         {/* BOTÕES DE AÇÃO */}
         <div className="mt-3 flex justify-end gap-2">
+          {isOwner && (
+  <button
+    onClick={() => setShowCurriculoModal(true)}
+    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg py-2 px-4 text-sm font-medium hover:opacity-90 transition"
+  >
+    Ver Currículo
+  </button>
+)}
+
           {isOwner ? (
             <button
               onClick={() => setShowEditModal(true)}
@@ -319,6 +333,19 @@ const interessesHobbiesState = interessesHobbies || [];
         {showEditModal && (
           <EditPerfilModal perfil={perfil} onClose={() => setShowEditModal(false)} onUpdate={onUpdatePerfil} />
         )}
+ {showCurriculoModal && (
+  <CurriculoModal
+    // Criamos um novo objeto unindo os dados básicos do perfil com as listas
+    perfil={{
+      ...perfil,
+      idiomas,
+      habilidades,
+      interessesHobbies,
+      cursosConcluidos // Passando a lista de cursos já filtrada que você tem no Layout
+    }}
+    onClose={() => setShowCurriculoModal(false)}
+  />
+)}
 
         {/* ESTATÍSTICAS */}
         <div className="flex justify-around mt-6">

@@ -30,6 +30,7 @@ import NetworkingPage from "../components/Networking";
 import JobList from "./JobList";
 import ListPost from "./postList";
 import Formalario from "./Formulario";
+import SettingsList from "./Definicao";
 
 
 interface Props {
@@ -111,6 +112,7 @@ Desafio: <Formalario />,
   ) : null,
 Mensagens: <MessagesPage />,
 Comunidade: <ListPost />,
+Difinicao: <SettingsList />,
 
 Arquivos: usuarioLogadoId ? (
   <AuthorDashboardView currentUserId={usuarioLogadoId} />
