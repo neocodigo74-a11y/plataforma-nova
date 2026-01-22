@@ -31,6 +31,7 @@ import JobList from "./JobList";
 import ListPost from "./postList";
 import Formalario from "./Formulario";
 import SettingsList from "./Definicao";
+import PromoBanner from "./PromoBanner";
 
 
 interface Props {
@@ -230,7 +231,8 @@ Arquivos: usuarioLogadoId ? (
         )}
       </AnimatePresence>
 
-      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-[3px]">
+      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-[1px]">
+        <PromoBanner />
         <AnimatePresence mode="wait">
           <motion.div
             key={activeContent}

@@ -246,8 +246,8 @@ export default function Sidebar({
       <div className="mt-2 px-2 flex flex-col gap-0.5">
         <SidebarItem icon={<LayoutDashboard size={13} />} label="Inicio" active  onClick={() => onNavigate("Home")} />
      <SidebarItem
-  icon={<Users size={13} />}
-  label="Comunidade"
+  icon={<GraduationCap size={13} />}
+  label="Explorar Cursos"
   onClick={() => onNavigate("Comunidade")}
 />
      <SidebarItem
