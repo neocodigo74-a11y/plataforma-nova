@@ -32,10 +32,12 @@ import ListPost from "./postList";
 import Formalario from "./Formulario";
 import SettingsList from "./Definicao";
 import PromoBanner from "./PromoBanner";
+import AllSkillsSections, { SkillItem } from "./AllSkillsSections";
 
 
 interface Props {
   children?: ReactNode;
+  onCourseSelect: (course: SkillItem) => void;
 }
 interface DetalhesUsuarioProps {
   usuarioId: string;
@@ -46,7 +48,7 @@ interface DetalhesUsuarioProps {
 
 const APP_BG = "bg-white";
 
-export default function AppContent({ children }: Props) {
+export default function AppContent({ children,onCourseSelect }: Props) {
   const [activeContent, setActiveContent] = useState<string>("Home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -112,7 +114,7 @@ Desafio: <Formalario />,
     />
   ) : null,
 Mensagens: <MessagesPage />,
-Comunidade: <ListPost />,
+Comunidade: <AllSkillsSections onCourseSelect={onCourseSelect} />,
 Difinicao: <SettingsList />,
 
 Arquivos: usuarioLogadoId ? (
